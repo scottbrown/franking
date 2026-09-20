@@ -34,6 +34,7 @@ func parseArgs(args []string, stderr io.Writer) (run.Config, error) {
 	files := fs.Bool("files", false, "show the per-file table")
 	recurse := fs.Bool("recurse", false, "read subdirectories, to a depth of 8")
 	verbose := fs.Bool("v", false, "show parse warnings and skipped files")
+	htmlPath := fs.String("html", "", "also write a self-contained HTML report to this `file`")
 	timeout := fs.Duration("timeout", run.DefaultTimeout, "stop the whole run after this time")
 
 	maxFile := byteSize(archive.DefaultMaxFileSize)
@@ -63,6 +64,7 @@ func parseArgs(args []string, stderr io.Writer) (run.Config, error) {
 	cfg.Recurse = *recurse
 	cfg.Verbose = *verbose
 	cfg.Timeout = *timeout
+	cfg.HTMLPath = strings.TrimSpace(*htmlPath)
 	cfg.Limits = archive.Limits{
 		MaxFileSize: int64(maxFile),
 		MaxXMLSize:  int64(maxXML),
@@ -84,6 +86,9 @@ func parseArgs(args []string, stderr io.Writer) (run.Config, error) {
 	}
 	if *maxRatio <= 0 {
 		return cfg, errors.New("-max-ratio must be positive")
+	}
+	if *htmlPath != "" && cfg.HTMLPath == "" {
+		return cfg, errors.New("-html wants a file path")
 	}
 	return cfg, nil
 }

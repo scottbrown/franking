@@ -212,3 +212,69 @@ func TestOutputGoesToTheGivenWriterOnly(t *testing.T) {
 		t.Fatal("nothing was written to the given writer")
 	}
 }
+
+func TestHTMLFlagWritesOnlyTheFileGiven(t *testing.T) {
+	dir := t.TempDir()
+	out := filepath.Join(dir, "report.html")
+
+	var stdout, stderr bytes.Buffer
+	if got := franking([]string{"-html", out, reportsDir()}, &stdout, &stderr); got != exitOK {
+		t.Fatalf("exit = %d: %s", got, stderr.String())
+	}
+
+	// Exactly one file, at the path the user named, and nothing else.
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].Name() != "report.html" {
+		var names []string
+		for _, e := range entries {
+			names = append(names, e.Name())
+		}
+		t.Fatalf("directory holds %v, want only report.html", names)
+	}
+
+	b, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	html := string(b)
+	if !strings.HasPrefix(html, "<!DOCTYPE html>") {
+		t.Fatalf("not an HTML document: %.60q", html)
+	}
+	if !strings.Contains(html, "DMARC report") {
+		t.Error("want the report title")
+	}
+	// stdout still carries the chosen format; the report is extra.
+	if !strings.Contains(stdout.String(), "Run summary") {
+		t.Error("-html must not replace the stdout report")
+	}
+	if !strings.Contains(stderr.String(), "wrote ") {
+		t.Error("want the written path reported on stderr")
+	}
+}
+
+func TestHTMLFlagReportsAnUnwritablePath(t *testing.T) {
+	dir := t.TempDir()
+	// A path whose parent is a file, not a directory.
+	blocker := filepath.Join(dir, "blocker")
+	if err := os.WriteFile(blocker, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	got := franking([]string{"-html", filepath.Join(blocker, "report.html"), reportsDir()}, &stdout, &stderr)
+	if got != exitFail {
+		t.Fatalf("exit = %d, want %d", got, exitFail)
+	}
+	if !strings.Contains(stderr.String(), "cannot write the HTML report") {
+		t.Errorf("want a clear reason, got %q", stderr.String())
+	}
+}
+
+func TestHTMLFlagRejectsABlankPath(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	if got := franking([]string{"-html", "   ", reportsDir()}, &stdout, &stderr); got != exitUsage {
+		t.Fatalf("exit = %d, want %d", got, exitUsage)
+	}
+}

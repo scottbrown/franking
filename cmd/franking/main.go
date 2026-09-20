@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -44,10 +45,28 @@ func franking(args []string, stdout, stderr io.Writer) int {
 		return exitFail
 	}
 
-	opt := output.Options{ShowFiles: cfg.ShowFiles, Resolve: cfg.Resolve}
+	opt := output.Options{
+		ShowFiles: cfg.ShowFiles,
+		Resolve:   cfg.Resolve,
+		Limits: output.LimitLabels{
+			MaxFileSize: formatBytes(cfg.Limits.MaxFileSize),
+			MaxXMLSize:  formatBytes(cfg.Limits.MaxXMLSize),
+			MaxRatio:    fmt.Sprintf("%g:1", cfg.Limits.MaxRatio),
+		},
+	}
 	if err := output.Write(stdout, cfg.Format, res, opt); err != nil {
 		fmt.Fprintf(stderr, "franking: %s\n", err)
 		return exitFail
+	}
+
+	// -html is the only path on which this tool writes a file, and it writes
+	// only to the path the user named on the command line.
+	if cfg.HTMLPath != "" {
+		if err := writeHTMLReport(cfg.HTMLPath, res, opt); err != nil {
+			fmt.Fprintf(stderr, "franking: %s\n", err)
+			return exitFail
+		}
+		fmt.Fprintf(stderr, "wrote %s\n", cfg.HTMLPath)
 	}
 
 	if cfg.Verbose {
@@ -65,4 +84,17 @@ func franking(args []string, stdout, stderr io.Writer) int {
 		return exitFail
 	}
 	return exitOK
+}
+
+// writeHTMLReport renders the report into memory first, so that a failure
+// part way through never leaves a truncated file behind.
+func writeHTMLReport(path string, res *aggregate.Result, opt output.Options) error {
+	var buf bytes.Buffer
+	if err := output.WriteHTML(&buf, res, opt); err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, buf.Bytes(), 0o644); err != nil {
+		return fmt.Errorf("cannot write the HTML report: %w", err)
+	}
+	return nil
 }

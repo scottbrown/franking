@@ -84,6 +84,40 @@ franking -format json ./reports | jq '.sources[] | select(.class == "FAIL")'
 franking -format csv  ./reports > sources.csv
 ```
 
+### The HTML report
+
+When the terminal is not the right place to read it — you want to send it to
+someone, attach it to a ticket, or print it — `-html` writes a visual report
+to a file:
+
+```sh
+franking -html report.html ./reports
+```
+
+That is **one self-contained file**. The stylesheet and the script are
+inlined, there is no CDN and no web font, and it makes no network request of
+any kind, so it works offline and survives being emailed. It opens in any
+browser with a double-click.
+
+The report leads with the verdict — the pass rate, in words, and whether the
+policy can move forward — then what needs doing, then the full source table,
+then the files. That is the reverse of the text output's order, on purpose: a
+document is read top-down, so the answer goes first.
+
+The source table has working controls: filter chips per class, sortable
+columns, and a search box. They are progressive enhancement — every row is in
+the markup, so with JavaScript off you still get the whole table, and the
+controls stay hidden rather than sitting there dead. Printing drops the
+controls, lifts reading copy to a 12pt floor, and paginates.
+
+`-html` is the only circumstance in which franking writes a file, and it
+writes only to the path you name.
+
+One difference from the text output: the HTML report lists `DKIM-ONLY` under
+"no action needed" rather than under "what needs doing", because that class is
+a correct end state. The text output follows the original specification and
+prints every non-`PASS` class under Actions.
+
 ## The five classes
 
 Each sending address gets exactly one class. Sources are sorted by message
@@ -118,6 +152,7 @@ usually names the service that sent the mail, which is where the fix goes.
 | `-max-file-size` | `50MB` | Reject an input file larger than this |
 | `-max-xml-size` | `64MB` | Reject a report that expands beyond this |
 | `-max-ratio` | `200` | Reject a compression ratio above this |
+| `-html` | none | Also write a self-contained HTML report to this file |
 | `-timeout` | `5m` | Stop the whole run after this time |
 | `-v` | `false` | Show parse warnings and skipped files on stderr |
 
@@ -156,9 +191,10 @@ Every input file is treated as hostile. These limits hold on every run.
 
 ## What the tool will not do
 
-- It never writes a file. Archive members are parsed as a stream in memory,
-  and an archive member name is never used as a path, so `zip slip` has
-  nothing to work with. The input directory is opened read-only.
+- It never writes a file unless you pass `-html`, and then only to the path
+  you named. Archive members are parsed as a stream in memory, and an archive
+  member name is never used as a path, so `zip slip` has nothing to work
+  with. The input directory is opened read-only.
 - It never starts another process or a shell.
 - It never reads a file path out of the environment.
 - It never resolves an XML entity, external or otherwise, and it rejects
@@ -170,6 +206,11 @@ Every input file is treated as hostile. These limits hold on every run.
   Control characters, C1 codes, and bidirectional overrides are removed
   from every untrusted string, and every CSV cell that a spreadsheet would
   treat as a formula is prefixed with a single quote.
+- The HTML report never lets a report string reach a CSS or a JavaScript
+  context. Class colours are stylesheet class names from a fixed set, never
+  interpolated values, and the script reads only `data-` attributes rather
+  than an embedded data literal. `html/template` escaping sits underneath
+  that as a second line, not the first.
 
 ### Network
 
@@ -202,10 +243,20 @@ internal/aggregate/   Per-IP and per-file aggregation, classification
 internal/safe/        Sanitize, validate, and limit helpers
 internal/output/      text, json, and csv writers
 internal/run/         Ties the walk, the readers, and the aggregates together
+design/               Design sources for the HTML report (see below)
 testdata/reports/     Sample reports
 testdata/malicious/   Hostile samples: reject/ must be refused,
                       sanitize/ must be parsed with the nasty strings cleaned
 ```
+
+`design/` holds the artboards the HTML report was designed from. They are
+the source of truth for its layout, palette and copy; the seeded canvas
+itself is generated and is not in the tree.
+
+**One rule the HTML writer must keep**: a DMARC pass is the *union* of
+aligned DKIM and aligned SPF, so it cannot be recomputed from the two column
+percentages — 62% and 41% is neither 100% nor 103%. The count is carried
+through from the aggregate. `TestHTMLCarriesTheDMARCUnion` guards this.
 
 All addresses and domains in `testdata/` are from the documentation ranges
 (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`) and

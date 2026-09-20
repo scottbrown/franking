@@ -31,6 +31,7 @@ type Config struct {
 	Resolve   bool
 	ShowFiles bool
 	Recurse   bool
+	HTMLPath  string
 	Limits    archive.Limits
 	Parser    report.Limits
 	Timeout   time.Duration
