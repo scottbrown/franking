@@ -101,6 +101,20 @@ func TestWriteTextPolicyLine(t *testing.T) {
 	if !strings.Contains(buf.String(), "below 100%") {
 		t.Fatalf("want the below-100%% verdict, got:\n%s", buf.String())
 	}
+
+	// With nothing parsed there are no sources, so the line must not send
+	// the reader to a table that is empty.
+	empty := aggregate.New().Result(1)
+	buf.Reset()
+	if err := WriteText(&buf, empty, Options{}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(buf.String(), "no messages were reported") {
+		t.Fatalf("want the empty-run verdict, got:\n%s", buf.String())
+	}
+	if strings.Contains(buf.String(), "sources above") {
+		t.Fatalf("an empty run must not point at sources:\n%s", buf.String())
+	}
 }
 
 func TestWriteJSONIsValid(t *testing.T) {

@@ -137,13 +137,17 @@ func writePolicyLine(b *strings.Builder, res *aggregate.Result) {
 	if len(res.Policies) > 0 {
 		policy = strings.Join(res.Policies, ", ")
 	}
-	rate := res.Totals.PassRate()
+	if res.Totals.Messages <= 0 {
+		fmt.Fprintf(b, "\nPolicy: p=%s — no messages were reported, so the policy state is unknown.\n",
+			policy)
+		return
+	}
 	verdict := "below 100%; resolve the sources above before moving the policy forward"
-	if res.Totals.Messages > 0 && res.Totals.DMARCPass >= res.Totals.Messages {
+	if res.Totals.DMARCPass >= res.Totals.Messages {
 		verdict = "at 100% for the full range; the policy can move forward"
 	}
 	fmt.Fprintf(b, "\nPolicy: p=%s over %s — DMARC pass rate %s, %s.\n",
-		policy, rangeText(res), percent(rate), verdict)
+		policy, rangeText(res), percent(res.Totals.PassRate()), verdict)
 }
 
 func share(res *aggregate.Result, messages int64) float64 {
