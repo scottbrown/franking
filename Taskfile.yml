@@ -1,0 +1,71 @@
+version: '3'
+
+vars:
+  BINARY: franking
+  BUILD_DIR: .build
+  TEST_DIR: .test
+
+tasks:
+  default:
+    desc: Build and test
+    cmds:
+      - task: build
+      - task: test
+
+  build:
+    desc: Build the binary into .build/
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}
+      - go build -o {{.BUILD_DIR}}/{{.BINARY}} ./cmd/{{.BINARY}}
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  fmt:
+    desc: Format the source
+    cmds:
+      - gofmt -w .
+
+  test:
+    desc: Run the tests with coverage into .test/
+    cmds:
+      - mkdir -p {{.TEST_DIR}}
+      - go test -coverprofile {{.TEST_DIR}}/coverage.out ./...
+
+  coverage:
+    desc: Show the coverage summary
+    deps: [test]
+    cmds:
+      - go tool cover -func {{.TEST_DIR}}/coverage.out | tail -n 1
+
+  coverage:html:
+    desc: Write the coverage report to .test/coverage.html
+    deps: [test]
+    cmds:
+      - go tool cover -html {{.TEST_DIR}}/coverage.out -o {{.TEST_DIR}}/coverage.html
+
+  fuzz:
+    desc: Fuzz the parser for 60s
+    cmds:
+      - mkdir -p {{.TEST_DIR}}
+      - go test ./internal/report -fuzz FuzzParse -fuzztime 60s
+
+  check:
+    desc: Everything CI runs
+    cmds:
+      - gofmt -l .
+      - task: vet
+      - task: test
+
+  run:
+    desc: 'Run against a directory: task run -- ./testdata/reports'
+    deps: [build]
+    cmds:
+      - '{{.BUILD_DIR}}/{{.BINARY}} {{.CLI_ARGS}}'
+
+  clean:
+    desc: Remove the build and test artifacts
+    cmds:
+      - rm -rf {{.BUILD_DIR}} {{.TEST_DIR}}

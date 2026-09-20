@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feedback>
+  <report_metadata>
+    <org_name>rtl.example.ca</org_name>
+    <email>rtl@example.ca</email>
+    <report_id>rtl-0001</report_id>
+    <date_range><begin>1700000000</begin><end>1700086400</end></date_range>
+  </report_metadata>
+  <policy_published>
+    <domain>example.ca</domain>
+    <p>none</p>
+  </policy_published>
+  <record>
+    <row>
+      <source_ip>203.0.113.201</source_ip>
+      <count>4</count>
+      <policy_evaluated>
+        <disposition>reject</disposition>
+        <dkim>fail</dkim>
+        <spf>fail</spf>
+      </policy_evaluated>
+    </row>
+    <identifiers>
+      <header_from>example&#8238;ac.elpmaxe&#8237;.ca</header_from>
+    </identifiers>
+    <auth_results>
+      <spf>
+        <domain>gro&#8238;.example.ca</domain>
+        <result>fail</result>
+      </spf>
+    </auth_results>
+  </record>
+</feedback>

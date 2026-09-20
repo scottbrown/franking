@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feedback>
+  <report_metadata>
+    <org_name>[2J[1;1Hraw</org_name>
+    <report_id>raw-escape</report_id>
+    <date_range><begin>1700000000</begin><end>1700086400</end></date_range>
+  </report_metadata>
+  <policy_published><domain>example.ca</domain><p>none</p></policy_published>
+</feedback>

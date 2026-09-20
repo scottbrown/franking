@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feedback>
+  <report_metadata>
+    <org_name>&#155;2J&#155;1;1Hcleared&#155;]0;window-title&#8236;reversed&#8237;</org_name>
+    <email>ansi@example.ca</email>
+    <report_id>ansi&#155;0001</report_id>
+    <date_range><begin>1700000000</begin><end>1700086400</end></date_range>
+  </report_metadata>
+  <policy_published>
+    <domain>example.ca</domain>
+    <p>none</p>
+  </policy_published>
+  <record>
+    <row>
+      <source_ip>203.0.113.200</source_ip>
+      <count>9</count>
+      <policy_evaluated>
+        <disposition>none</disposition>
+        <dkim>fail</dkim>
+        <spf>fail</spf>
+      </policy_evaluated>
+    </row>
+    <identifiers>
+      <header_from>example.ca</header_from>
+    </identifiers>
+    <auth_results>
+      <spf>
+        <domain>&#155;evil.example.ca</domain>
+        <result>fail</result>
+      </spf>
+    </auth_results>
+  </record>
+</feedback>

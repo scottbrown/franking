@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!DOCTYPE feedback [
+  <!ENTITY passwd SYSTEM "file:///etc/passwd">
+  <!ENTITY callhome SYSTEM "http://127.0.0.1:8080/collect">
+]>
+<feedback>
+  <report_metadata>
+    <org_name>&passwd;</org_name>
+    <email>&callhome;</email>
+    <report_id>xxe</report_id>
+    <date_range><begin>1700000000</begin><end>1700086400</end></date_range>
+  </report_metadata>
+  <policy_published><domain>example.ca</domain><p>none</p></policy_published>
+</feedback>
