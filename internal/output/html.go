@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"franking/internal/aggregate"
+	"franking/internal/diagnose"
 )
 
 // Version is the build stamp printed in the report footer.
@@ -27,6 +28,7 @@ const Version = "1.0.0"
 //     is carried through from the aggregate, never recomputed from the two
 //     column percentages, which cannot express a union.
 func WriteHTML(w io.Writer, res *aggregate.Result, opt Options) error {
+	opt = opt.withDiagnosis(res)
 	tmpl, err := template.New("report").Parse(htmlTemplate)
 	if err != nil {
 		return fmt.Errorf("html: %w", err)
@@ -48,6 +50,12 @@ type htmlDoc struct {
 	PolicyP       string
 	PolicyAdvice  string
 	Stats         []htmlStat
+	Headline      string
+	DiagGroups    []htmlDiagGroup
+	Evidence      []string
+	Todo          []htmlTodo
+	OwnRate       string
+	OwnDiffers    bool
 	Groups        []htmlGroup
 	NoActionNote  string
 	Chips         []htmlChip
@@ -62,6 +70,20 @@ type htmlDoc struct {
 	Version       string
 	Limits        htmlLimits
 	Warnings      []string
+}
+
+type htmlDiagGroup struct {
+	Label    string
+	Slug     string
+	Sources  string
+	Messages int64
+	Rate     string
+}
+
+type htmlTodo struct {
+	Step   int
+	Title  string
+	Detail string
 }
 
 type htmlStat struct {
@@ -173,7 +195,7 @@ func buildHTMLDoc(res *aggregate.Result, opt Options) htmlDoc {
 		PassPercent:  clampPercent(shown),
 		Totals:       res.Totals,
 		FailMessages: res.Totals.Messages - res.Totals.DMARCPass,
-		SourceCount:  len(res.Sources),
+		SourceCount:  sourcePopulation(res),
 		PolicyP:      policyText(res),
 		Resolve:      opt.Resolve,
 		Command:      commandLine(opt),
@@ -202,7 +224,7 @@ func buildHTMLDoc(res *aggregate.Result, opt Options) htmlDoc {
 		{Value: fmt.Sprint(res.FilesParsed), Label: "parsed", Tone: "ink"},
 		{Value: fmt.Sprint(res.FilesSkipped), Label: "skipped", Tone: "muted"},
 		{Value: fmt.Sprint(res.FilesError), Label: "with errors", Tone: errorTone(res.FilesError)},
-		{Value: fmt.Sprint(len(res.Sources)), Label: "source addresses", Tone: "ink"},
+		{Value: fmt.Sprint(sourcePopulation(res)), Label: "source addresses", Tone: "ink"},
 	}
 
 	grouped := make(map[aggregate.Class][]*aggregate.Source)
@@ -279,8 +301,27 @@ func buildHTMLDoc(res *aggregate.Result, opt Options) htmlDoc {
 		doc.Groups = append(doc.Groups, group)
 	}
 
-	doc.VerdictClause = verdictClause(res, needing)
-	doc.PolicyAdvice = policyAdvice(res, shown)
+	d := opt.Diagnosis
+	doc.Headline = d.Headline
+	doc.VerdictClause = d.Headline
+	doc.PolicyAdvice = policyAdviceFrom(d)
+	doc.OwnRate = percent(d.OwnRate())
+	doc.OwnDiffers = d.OwnMessages != res.Totals.Messages
+	for _, k := range d.Order {
+		g := d.Group(k)
+		doc.DiagGroups = append(doc.DiagGroups, htmlDiagGroup{
+			Label:    k.Label(),
+			Slug:     kindSlug(k),
+			Sources:  plural(g.Count(), "source"),
+			Messages: g.Messages,
+			Rate:     percent(g.Rate()),
+		})
+	}
+	for i, a := range d.Actions {
+		doc.Todo = append(doc.Todo, htmlTodo{Step: i + 1, Title: a.Title, Detail: a.Detail})
+	}
+	doc.Evidence = d.Evidence
+	_ = needing
 	// When everything passed, the all-clear block has already said so; a
 	// note repeating it underneath is noise.
 	dkimOnly := len(grouped[aggregate.ClassDKIMOnly])
@@ -308,6 +349,55 @@ func buildHTMLDoc(res *aggregate.Result, opt Options) htmlDoc {
 	}
 
 	return doc
+}
+
+// kindSlug maps a diagnosis kind onto a CSS class from a fixed set.
+func kindSlug(k diagnose.Kind) string {
+	switch k {
+	case diagnose.KindPassing:
+		return "pass"
+	case diagnose.KindForwarded:
+		return "dkim-only"
+	case diagnose.KindUnsigned:
+		return "spf-only"
+	case diagnose.KindUnaligned:
+		return "partial"
+	case diagnose.KindForged:
+		return "fail"
+	}
+	return "unknown"
+}
+
+// policyAdviceFrom states the policy position in the diagnosis's terms, so
+// a forgery campaign never reads as the reader's own misconfiguration.
+func policyAdviceFrom(d *diagnose.Diagnosis) string {
+	r := d.Readiness
+	out := sentenceOf(capitaliseFirst(r.Reason))
+	switch {
+	case r.Safe && r.Next != "":
+		out += fmt.Sprintf(" Publish p=%s.", r.Next)
+	case !r.Safe:
+		out += " Leave the policy where it is until that is cleared."
+	}
+	for _, c := range r.Caveats {
+		out += " Note that " + c + "."
+	}
+	return out
+}
+
+func sentenceOf(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" || strings.HasSuffix(s, ".") {
+		return s
+	}
+	return s + "."
+}
+
+func capitaliseFirst(s string) string {
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }
 
 func verdictClause(res *aggregate.Result, needing int) string {
@@ -390,6 +480,16 @@ func commandLine(opt Options) string {
 		cmd += " -files"
 	}
 	return cmd + " <directory>"
+}
+
+// sourcePopulation is every address the run saw, not just the rows the
+// table shows: -min-count hides rows, and the headline must not shrink
+// because of a display filter.
+func sourcePopulation(res *aggregate.Result) int {
+	if n := len(res.AllSources); n > 0 {
+		return n
+	}
+	return len(res.Sources)
 }
 
 func errorTone(n int) string {

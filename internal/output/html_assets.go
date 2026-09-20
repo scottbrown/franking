@@ -149,6 +149,23 @@ tr.reason td{border-bottom:1px solid var(--rule-2);padding-top:0;color:var(--fai
 .u-unknown{border-bottom:2px solid var(--unknown)}
 td .mark{padding-bottom:2px;font-size:10px}
 
+.diag-headline{font-size:21px;line-height:1.5;color:var(--ink);margin-bottom:20px;
+  max-width:680px;text-wrap:pretty}
+table.diag{width:auto;margin-bottom:6px}
+table.diag td{border:none;padding:6px 26px 6px 0;font-size:14px;vertical-align:baseline}
+table.diag td.num{text-align:left}
+.evidence{font-size:14px;line-height:1.6;color:var(--ink-3);max-width:680px;
+  margin-top:10px;text-wrap:pretty}
+ol.todo{margin:0;padding-left:0;list-style:none;counter-reset:step;
+  display:flex;flex-direction:column;gap:18px}
+ol.todo li{counter-increment:step;display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px}
+ol.todo .todo-body{min-width:0}
+ol.todo li::before{content:counter(step) ".";font-size:16px;color:var(--muted);
+  font-variant-numeric:tabular-nums}
+.todo-title{font-size:17px;line-height:1.45;color:var(--ink)}
+.todo-detail{font-size:15px;line-height:1.6;color:var(--ink-3);margin-top:5px;
+  max-width:640px;text-wrap:pretty}
+
 .footer-rule{margin-top:52px}
 footer{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap;
   font-size:12px;color:var(--ink-3);margin-top:22px}
@@ -164,6 +181,10 @@ footer{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap;
   .verdict-prose{font-size:17px;margin-top:14px}
   .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
   .group{flex-direction:column;gap:11px}
+  .diag-headline{font-size:18px}
+  table.diag,table.diag tbody,table.diag tr,table.diag td{display:block}
+  table.diag tr{margin-bottom:12px}
+  table.diag td{padding:1px 0}
   .group-mark{width:auto}
   .mark-rule{width:54px}
   .chip{padding:14px 13px;min-height:44px}
@@ -192,7 +213,8 @@ footer{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap;
   body{background:#fff}
   .sheet{max-width:none;padding:0}
   /* Reading copy to the 12pt floor; labels and footer no lower than 10.5pt. */
-  .advice,.callout,.all-clear p{font-size:16px}
+  .advice,.callout,.all-clear p,.evidence,.todo-detail{font-size:16px}
+  ol.todo li,.diag-headline{break-inside:avoid}
   .action-ip,.action-msgs,.action-spf,.action-spf .mono{font-size:16px}
   .action-ip{width:152px}.action-msgs{width:92px}
   footer,.provenance,.colophon,.rownote,.stat-label{font-size:14px}

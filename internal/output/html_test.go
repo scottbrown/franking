@@ -2,12 +2,14 @@ package output
 
 import (
 	"bytes"
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
 
 	"franking/internal/aggregate"
+	"franking/internal/diagnose"
 	"franking/internal/report"
 )
 
@@ -180,17 +182,17 @@ func TestHTMLAllClearState(t *testing.T) {
 	}))
 	html := renderHTML(t, agg.Result(1), Options{})
 
-	if !strings.Contains(html, "Nothing needs your attention.") {
-		t.Error("want the all-clear verdict")
+	if !strings.Contains(html, "Everything authenticates") {
+		t.Error("want the all-clear headline")
 	}
 	if !strings.Contains(html, "class=\"all-clear\"") {
 		t.Error("want the all-clear block instead of an empty actions list")
 	}
-	if !strings.Contains(html, "tightening the policy is safe") {
-		t.Error("want the advice that the policy can move forward")
+	if !strings.Contains(html, "Publish p=quarantine") {
+		t.Errorf("want the next policy step, got:\n%s", firstLines(html, 5))
 	}
-	if strings.Contains(html, "would be discarded") {
-		t.Error("the below-100% warning must not appear on a clean run")
+	if strings.Contains(html, "Leave the policy where it is") {
+		t.Error("a clean run must not tell the reader to hold")
 	}
 }
 
@@ -364,4 +366,92 @@ func firstLines(s string, n int) string {
 		lines = lines[:n]
 	}
 	return strings.Join(lines, "\n")
+}
+
+// TestHTMLLeadsWithTheDiagnosis checks that the report answers "what is
+// happening and what do I do" before it shows a single table, and that a
+// forgery campaign does not read as the reader's own misconfiguration.
+func TestHTMLLeadsWithTheDiagnosis(t *testing.T) {
+	agg := aggregate.New()
+	records := []report.Record{{
+		SourceIP: "203.0.113.10", Count: 100,
+		Disposition: report.DispositionNone,
+		DKIM:        report.AuthPass, SPF: report.AuthPass,
+		DKIMDomains: []string{"example.ca"}, SPFDomains: []string{"example.ca"},
+	}}
+	for i := range 40 {
+		records = append(records, report.Record{
+			SourceIP: fmt.Sprintf("198.51.100.%d", i+1), Count: 2,
+			Disposition: report.DispositionNone,
+			DKIM:        report.AuthFail, SPF: report.AuthFail,
+			SPFDomains: []string{"example.ca"},
+		})
+	}
+	agg.AddFile(agg.AddReport("r.xml", &report.Report{
+		Metadata: report.Metadata{Org: "google.com", Range: report.DateRange{
+			Begin: time.Unix(1700000000, 0), End: time.Unix(1702592000, 0)}},
+		Policy:  report.Policy{Domain: "example.ca", P: "none"},
+		Records: records,
+	}))
+	html := renderHTML(t, agg.Result(1), Options{})
+
+	for _, want := range []string{"What this shows", "What to do",
+		"forging your domain", "Publish p=quarantine"} {
+		if !strings.Contains(html, want) {
+			t.Errorf("report is missing %q", want)
+		}
+	}
+	// The diagnosis must come before the detail tables.
+	diag := strings.Index(html, "What this shows")
+	todo := strings.Index(html, "What to do")
+	table := strings.Index(html, "Every sending address")
+	if !(diag < todo && todo < table) {
+		t.Errorf("order is wrong: diagnosis %d, todo %d, table %d", diag, todo, table)
+	}
+}
+
+// TestMinCountCannotChangeTheDiagnosis pins the rule that a display filter
+// is a display filter. Hiding the long tail of a forgery campaign from the
+// table must not make the tool stop calling it a forgery.
+func TestMinCountCannotChangeTheDiagnosis(t *testing.T) {
+	records := []report.Record{{
+		SourceIP: "203.0.113.10", Count: 100,
+		Disposition: report.DispositionNone,
+		DKIM:        report.AuthPass, SPF: report.AuthPass,
+		DKIMDomains: []string{"example.ca"}, SPFDomains: []string{"example.ca"},
+	}}
+	for i := range 40 {
+		records = append(records, report.Record{
+			SourceIP: fmt.Sprintf("198.51.100.%d", i+1), Count: 2,
+			Disposition: report.DispositionNone,
+			DKIM:        report.AuthFail, SPF: report.AuthFail,
+			SPFDomains: []string{"example.ca"},
+		})
+	}
+	mk := func(minCount int64) *aggregate.Result {
+		agg := aggregate.New()
+		agg.AddFile(agg.AddReport("r.xml", &report.Report{
+			Metadata: report.Metadata{Org: "google.com", Range: report.DateRange{
+				Begin: time.Unix(1700000000, 0), End: time.Unix(1702592000, 0)}},
+			Policy:  report.Policy{Domain: "example.ca", P: "none"},
+			Records: records,
+		}))
+		return agg.Result(minCount)
+	}
+
+	full := diagnose.Run(mk(1))
+	filtered := diagnose.Run(mk(50)) // hides every forged row from the table
+
+	if full.Headline != filtered.Headline {
+		t.Errorf("headline changed with -min-count:\n  %q\n  %q", full.Headline, filtered.Headline)
+	}
+	if full.Group(diagnose.KindForged).Count() != filtered.Group(diagnose.KindForged).Count() {
+		t.Errorf("forged count changed with -min-count: %d then %d",
+			full.Group(diagnose.KindForged).Count(),
+			filtered.Group(diagnose.KindForged).Count())
+	}
+	if full.Readiness.Safe != filtered.Readiness.Safe {
+		t.Errorf("readiness changed with -min-count: %v then %v",
+			full.Readiness.Safe, filtered.Readiness.Safe)
+	}
 }

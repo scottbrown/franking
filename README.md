@@ -118,6 +118,77 @@ One difference from the text output: the HTML report lists `DKIM-ONLY` under
 a correct end state. The text output follows the original specification and
 prints every non-`PASS` class under Actions.
 
+## Is it your configuration, or is someone forging your domain?
+
+A low pass rate has two completely different causes that call for opposite
+actions, and a percentage cannot tell them apart:
+
+- **A sender of yours is not aligned.** Tightening the policy would start
+  acting on your own mail. Fix the sender first.
+- **Someone is forging your domain.** Tightening the policy is precisely
+  what stops it, and the forged volume is dragging your headline rate down
+  while you look at it.
+
+franking works out which, and says so. The rubric is the *shape of the
+failing population* plus whether each failing source owns up to who it is:
+
+| Signal | A broken sender of yours | A forgery |
+|---|---|---|
+| DKIM signature attempted | usually — a stale key or selector | never; there is no key to sign with |
+| Envelope domain | its own (`bounce.sendgrid.net`) | forged as yours |
+| Number of sources | one or two | many |
+| Volume each | substantial | one or two messages |
+
+Each failing source is read first. One that attempted a DKIM signature, or
+that used its own bounce domain, has identified itself — that is a sender of
+yours with a gap, and it is reported as `not aligned`. One that claims your
+domain with no signature is *unattributed*, and then the population decides:
+many of them each sending almost nothing is a fleet and is reported as
+`forged`; a few sending real volume is reported as `unidentified`, because a
+server of yours that was never added to SPF looks exactly like that.
+
+The thresholds are judgement calls rather than anything standardised, so
+they sit together at the top of `internal/diagnose/diagnose.go` where they
+can be argued with.
+
+### The number that actually matters
+
+When you are being forged, the headline pass rate is set by the attacker.
+franking reports a second rate over **only the sources that look like
+yours**, which an attacker cannot move:
+
+```
+Diagnosis
+  Your own mail is healthy. Someone is forging your domain.
+
+  your sender  3 sources    108 messages  100.0% pass
+  forged       147 sources  302 messages  0.0% pass
+
+  147 sources carried no DKIM signature and used your own domain as the
+  envelope — the shape of a forgery, not a misconfiguration
+
+  the volume is spread thin: 115 of 147 sent 2 messages or fewer
+
+  the headline pass rate of 26.3% is set by that forged mail; over your own
+  senders it is 100.0%
+
+What to do
+  1. Move the policy from p=none to p=quarantine
+     Every one of your 3 senders authenticates, so tightening acts only on
+     mail that is not yours. Publish p=quarantine. That is what stops the
+     302 messages of forged mail from being delivered. Note that this is
+     7 days of data; a sender that did not send this week would not appear
+     in it.
+```
+
+The steps are ordered, and the policy step comes last on purpose: you clear
+your own senders before you tighten. Where the evidence is thin — a short
+window, or few messages of your own — it says so rather than sounding
+certain.
+
+`-min-count` hides rows from the table. It never changes the diagnosis,
+which always reads every address the run saw.
+
 ## The five classes
 
 Each sending address gets exactly one class. Sources are sorted by message
@@ -145,7 +216,7 @@ usually names the service that sent the mail, which is where the fix goes.
 | `-format` | `text` | Output format: `text`, `json`, or `csv` |
 | `-since` | none | Ignore reports whose range ends before this date (`YYYY-MM-DD`) |
 | `-domain` | none | Process only reports for this policy domain |
-| `-min-count` | `1` | Hide sources with fewer messages than this |
+| `-min-count` | `1` | Hide sources with fewer messages than this (display only; the diagnosis still reads every address) |
 | `-resolve` | `false` | Do a reverse DNS lookup on each source IP |
 | `-files` | `false` | Show the per-file table |
 | `-recurse` | `false` | Read subdirectories, to a depth of 8 |
@@ -240,6 +311,7 @@ internal/report/      XML structs, hardened parser, charset reader
 internal/archive/     Container detection, limited zip and gzip readers,
                       directory walk
 internal/aggregate/   Per-IP and per-file aggregation, classification
+internal/diagnose/    Forgery vs. misconfiguration, and the recommended steps
 internal/safe/        Sanitize, validate, and limit helpers
 internal/output/      text, json, and csv writers
 internal/run/         Ties the walk, the readers, and the aggregates together

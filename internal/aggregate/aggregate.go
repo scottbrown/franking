@@ -104,12 +104,17 @@ func (t Totals) PassRate() float64 {
 
 // Result is everything one run produced.
 type Result struct {
-	Files        []FileResult
-	Sources      []*Source
+	Files   []FileResult
+	Sources []*Source
+	// AllSources is every address, including those -min-count hides from
+	// the table. A display filter must not change what the run concluded,
+	// so anything that reasons about the population reads this.
+	AllSources   []*Source
 	Totals       Totals
 	Begin        time.Time
 	End          time.Time
 	Policies     []string
+	Domains      []string
 	FilesFound   int
 	FilesParsed  int
 	FilesSkipped int
@@ -124,6 +129,7 @@ type Aggregator struct {
 	sources    map[string]*Source
 	files      []FileResult
 	policies   set
+	domains    set
 	warnings   []string
 	begin      time.Time
 	end        time.Time
@@ -142,6 +148,7 @@ func NewWithLimit(maxSources int) *Aggregator {
 		maxSources: maxSources,
 		sources:    make(map[string]*Source),
 		policies:   set{},
+		domains:    set{},
 	}
 }
 
@@ -171,6 +178,9 @@ func (a *Aggregator) AddReport(name string, rep *report.Report) FileResult {
 	}
 	if rep.Policy.P != "" {
 		a.policies.add(rep.Policy.P)
+	}
+	if rep.Policy.Domain != "" {
+		a.domains.add(rep.Policy.Domain)
 	}
 	a.extendRange(rep.Metadata.Range.Begin, rep.Metadata.Range.End)
 
@@ -237,6 +247,7 @@ func (a *Aggregator) Result(minCount int64) *Result {
 		Begin:     a.begin,
 		End:       a.end,
 		Policies:  a.policies.sorted(),
+		Domains:   a.domains.sorted(),
 		Warnings:  a.warnings,
 		Truncated: a.truncated,
 	}
@@ -254,17 +265,22 @@ func (a *Aggregator) Result(minCount int64) *Result {
 	for _, s := range a.sources {
 		res.Totals.Messages = safe.AddCount(res.Totals.Messages, s.Messages)
 		res.Totals.DMARCPass = safe.AddCount(res.Totals.DMARCPass, s.DMARCPass)
+		res.AllSources = append(res.AllSources, s)
 		if s.Messages < minCount {
 			continue
 		}
 		res.Sources = append(res.Sources, s)
 	}
-	sort.Slice(res.Sources, func(i, j int) bool {
-		if res.Sources[i].Messages != res.Sources[j].Messages {
-			return res.Sources[i].Messages > res.Sources[j].Messages
-		}
-		return res.Sources[i].IP < res.Sources[j].IP
-	})
+	byVolume := func(list []*Source) {
+		sort.Slice(list, func(i, j int) bool {
+			if list[i].Messages != list[j].Messages {
+				return list[i].Messages > list[j].Messages
+			}
+			return list[i].IP < list[j].IP
+		})
+	}
+	byVolume(res.Sources)
+	byVolume(res.AllSources)
 	return res
 }
 

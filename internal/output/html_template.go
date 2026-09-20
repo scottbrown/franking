@@ -71,7 +71,39 @@ const htmlTemplate = `<!DOCTYPE html>
     {{end}}
   </div>
 
-  <h2 class="eyebrow section">What needs doing</h2>
+  <h2 class="eyebrow section">What this shows</h2>
+  <div class="rule"></div>
+  <p class="diag-headline">{{.Headline}}</p>
+  <table class="diag">
+    <tbody>
+      {{range .DiagGroups}}
+      <tr>
+        <td><span class="mark mono c-{{.Slug}} u-{{.Slug}}">{{.Label}}</span></td>
+        <td class="mono tiny">{{.Sources}}</td>
+        <td class="num mono">{{.Messages}} messages</td>
+        <td class="num mono">{{.Rate}} pass</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{range .Evidence}}<p class="evidence">{{.}}</p>{{end}}
+
+  {{if .Todo}}
+  <h2 class="eyebrow section">What to do</h2>
+  <div class="rule"></div>
+  <ol class="todo">
+    {{range .Todo}}
+    <li>
+      <div class="todo-body">
+        <div class="todo-title">{{.Title}}</div>
+        <div class="todo-detail">{{.Detail}}</div>
+      </div>
+    </li>
+    {{end}}
+  </ol>
+  {{end}}
+
+  <h2 class="eyebrow section">Every class, in detail</h2>
   <div class="rule"></div>
   {{if .Groups}}
   <div class="groups">

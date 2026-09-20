@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -48,7 +49,7 @@ func TestWriteTextHoldsNoControlBytes(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertPrintable(t, buf.Bytes())
-	for _, want := range []string{"Run summary", "Files", "Sources", "Actions", "Policy: p="} {
+	for _, want := range []string{"Run summary", "Diagnosis", "Files", "Sources", "What to do", "Policy: p="} {
 		if !strings.Contains(buf.String(), want) {
 			t.Errorf("output is missing the %q block:\n%s", want, buf.String())
 		}
@@ -83,37 +84,80 @@ func TestWriteTextShowsFilesOnlyOnRequestOrOnError(t *testing.T) {
 }
 
 func TestWriteTextPolicyLine(t *testing.T) {
-	perfect := simpleResult()
-	perfect.Totals = aggregate.Totals{Messages: 10, DMARCPass: 10}
+	// A clean run: the close should point at the next policy step.
+	clean := aggregate.New()
+	clean.AddFile(clean.AddReport("clean.xml", &report.Report{
+		Metadata: report.Metadata{Org: "google.com", Range: report.DateRange{
+			Begin: time.Unix(1700000000, 0), End: time.Unix(1702592000, 0)}},
+		Policy: report.Policy{Domain: "example.ca", P: "none"},
+		Records: []report.Record{{
+			SourceIP: "203.0.113.10", Count: 400,
+			Disposition: report.DispositionNone,
+			DKIM:        report.AuthPass, SPF: report.AuthPass,
+			DKIMDomains: []string{"example.ca"}, SPFDomains: []string{"example.ca"},
+		}},
+	}))
 	var buf bytes.Buffer
-	if err := WriteText(&buf, perfect, Options{}); err != nil {
+	if err := WriteText(&buf, clean.Result(1), Options{}); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(buf.String(), "at 100%") {
-		t.Fatalf("want the 100%% verdict, got:\n%s", buf.String())
+	if !strings.Contains(buf.String(), "move to p=quarantine") {
+		t.Fatalf("want the next policy step, got:\n%s", buf.String())
 	}
 
-	partial := simpleResult()
+	// A run with a sender of your own still failing: do not move.
+	broken := simpleResult()
 	buf.Reset()
-	if err := WriteText(&buf, partial, Options{}); err != nil {
+	if err := WriteText(&buf, broken, Options{}); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(buf.String(), "below 100%") {
-		t.Fatalf("want the below-100%% verdict, got:\n%s", buf.String())
+	if !strings.Contains(buf.String(), "should not move yet") {
+		t.Fatalf("want the hold verdict, got:\n%s", buf.String())
 	}
+}
 
-	// With nothing parsed there are no sources, so the line must not send
-	// the reader to a table that is empty.
-	empty := aggregate.New().Result(1)
-	buf.Reset()
-	if err := WriteText(&buf, empty, Options{}); err != nil {
+// TestWriteTextSeparatesOwnRateFromHeadline is the reason the diagnosis
+// exists: a forger drives the headline rate down, and the close must not
+// let that read as the reader's own configuration being broken.
+func TestWriteTextSeparatesOwnRateFromHeadline(t *testing.T) {
+	agg := aggregate.New()
+	records := []report.Record{{
+		SourceIP: "203.0.113.10", Count: 100,
+		Disposition: report.DispositionNone,
+		DKIM:        report.AuthPass, SPF: report.AuthPass,
+		DKIMDomains: []string{"example.ca"}, SPFDomains: []string{"example.ca"},
+	}}
+	for i := range 40 {
+		records = append(records, report.Record{
+			SourceIP: fmt.Sprintf("198.51.100.%d", i+1), Count: 2,
+			Disposition: report.DispositionNone,
+			DKIM:        report.AuthFail, SPF: report.AuthFail,
+			SPFDomains: []string{"example.ca"},
+		})
+	}
+	agg.AddFile(agg.AddReport("r.xml", &report.Report{
+		Metadata: report.Metadata{Org: "google.com", Range: report.DateRange{
+			Begin: time.Unix(1700000000, 0), End: time.Unix(1702592000, 0)}},
+		Policy:  report.Policy{Domain: "example.ca", P: "none"},
+		Records: records,
+	}))
+
+	var buf bytes.Buffer
+	if err := WriteText(&buf, agg.Result(1), Options{}); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(buf.String(), "no messages were reported") {
-		t.Fatalf("want the empty-run verdict, got:\n%s", buf.String())
+	out := buf.String()
+	if !strings.Contains(out, "forging your domain") {
+		t.Errorf("want the forgery headline, got:\n%s", out)
 	}
-	if strings.Contains(buf.String(), "sources above") {
-		t.Fatalf("an empty run must not point at sources:\n%s", buf.String())
+	if !strings.Contains(out, "100.0% over your own senders") {
+		t.Errorf("want the own-sender rate stated separately, got:\n%s", out)
+	}
+	if !strings.Contains(out, "move to p=quarantine") {
+		t.Errorf("forgery is a reason to tighten, not to hold, got:\n%s", out)
+	}
+	if strings.Contains(out, "resolve the sources above before moving") {
+		t.Error("the old advice told the reader to fix mail that was never theirs")
 	}
 }
 

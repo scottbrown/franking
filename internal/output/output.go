@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"franking/internal/aggregate"
+	"franking/internal/diagnose"
 )
 
 // Format is an output format.
@@ -47,6 +48,22 @@ type Options struct {
 	Resolve   bool
 	Now       time.Time
 	Limits    LimitLabels
+
+	// Diagnosis is the assessment of the run. Every writer fills it in when
+	// it is nil, so a caller never has to and no entry point can be reached
+	// without one.
+	Diagnosis *diagnose.Diagnosis
+}
+
+// withDiagnosis returns the options with an assessment guaranteed present.
+func (o Options) withDiagnosis(res *aggregate.Result) Options {
+	if o.Diagnosis == nil {
+		o.Diagnosis = diagnose.Run(res)
+	}
+	if o.Now.IsZero() {
+		o.Now = time.Now()
+	}
+	return o
 }
 
 // LimitLabels are the limits that were in effect, already formatted, for the
@@ -59,9 +76,7 @@ type LimitLabels struct {
 
 // Write renders the result in the chosen format.
 func Write(w io.Writer, format Format, res *aggregate.Result, opt Options) error {
-	if opt.Now.IsZero() {
-		opt.Now = time.Now()
-	}
+	opt = opt.withDiagnosis(res)
 	switch format {
 	case FormatJSON:
 		return WriteJSON(w, res, opt)

@@ -13,6 +13,7 @@ import (
 // WriteCSV prints the source table with a header row. Every cell passes
 // through safe.CSVCell, so a spreadsheet never treats one as a formula.
 func WriteCSV(w io.Writer, res *aggregate.Result, opt Options) error {
+	opt = opt.withDiagnosis(res)
 	cw := csv.NewWriter(w)
 
 	header := []string{"ip"}
@@ -23,7 +24,7 @@ func WriteCSV(w io.Writer, res *aggregate.Result, opt Options) error {
 		"messages", "share", "dkim_pass", "spf_pass", "dmarc_pass",
 		"dkim_aligned_rate", "spf_aligned_rate", "dmarc_pass_rate",
 		"spf_domains", "dkim_domains", "dispositions", "orgs",
-		"first_seen", "last_seen", "class")
+		"first_seen", "last_seen", "class", "kind")
 	if err := cw.Write(escapeRow(header)); err != nil {
 		return err
 	}
@@ -49,6 +50,7 @@ func WriteCSV(w io.Writer, res *aggregate.Result, opt Options) error {
 			rfc3339(s.FirstSeen),
 			rfc3339(s.LastSeen),
 			string(s.Class()),
+			string(opt.Diagnosis.KindOf(s)),
 		)
 		if err := cw.Write(escapeRow(row)); err != nil {
 			return err
