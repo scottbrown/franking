@@ -1,0 +1,54 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",     "title": "Report — mixed run (working controls)", "x": 0,    "y": 0,    "w": 1080, "h": 2600, "print": "flow",  "is_interactive": true },
+    { "file": "AllClear.dc.html", "title": "Report — all clear",                    "x": 1200, "y": 0,    "w": 1080, "h": 1450, "print": "flow" },
+    { "file": "Mobile.dc.html",   "title": "Phone — 390px",                         "x": 2380, "y": 0,    "w": 390,  "h": 2400, "print": "flow" },
+    { "file": "Print.dc.html",    "title": "Print / PDF — A4 page 1",               "x": 0,    "y": 2800, "w": 794,  "h": 1123, "print": "fixed" },
+    { "file": "Marks.dc.html",    "title": "Specimen sheet",                        "x": 900,  "y": 2800, "w": 900,  "h": 1400, "print": "flow" }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 0,
+      "y": -190,
+      "w": 460,
+      "text": "THE DELIVERABLE\nWhat `franking -html report.html ./reports` writes.\n\nOne self-contained file: inlined CSS and JS, no CDN, no web fonts, no network. Filter chips, sortable columns and search all work — click them.\n\nOrder is inverted from stdout: verdict, then actions, then the full table. The payload comes first."
+    },
+    {
+      "id": "arithmetic",
+      "x": 490,
+      "y": -190,
+      "w": 420,
+      "text": "ONE RULE THE TEMPLATE MUST KEEP\nA DMARC pass is the UNION of aligned DKIM and aligned SPF, so it cannot be derived from the two percentages — 62% + 41% is not 100%, and capping the sum silently promotes a half-broken sender to passing.\n\nThe Go side already counts it per record. The template must carry that count through, never recompute it from the columns."
+    },
+    {
+      "id": "states",
+      "x": 1200,
+      "y": -190,
+      "w": 420,
+      "text": "THE COMMON CASE\nMost runs are clean, so the all-clear state has to read as calm and finished rather than empty.\n\nThe actions section becomes a statement, not a blank panel, and the policy note turns into the one piece of advice that matters: you can tighten now.\n\nControls are dropped here on purpose — under three rows there is nothing to filter."
+    },
+    {
+      "id": "mobile-note",
+      "x": 2380,
+      "y": -190,
+      "w": 330,
+      "text": "PHONE\nThe seven-column table collapses to one stacked record per address.\n\nThe phone drops COLUMNS, never findings: every action group and every filter chip that the desktop renders is here too.\n\nChips are 44px."
+    },
+    {
+      "id": "print-note",
+      "x": 0,
+      "y": 2660,
+      "w": 400,
+      "text": "PRINT / PDF\nA4 at 96px/inch. The tint, the controls and the reverse-name column all drop; the pass bar becomes hairline-bounded so it does not drink ink.\n\nReading copy — prose, advice, action rows — sits at the 12pt floor (16px). Subordinate labels and the footer go to 10.5pt, no lower."
+    },
+    {
+      "id": "marks-note",
+      "x": 900,
+      "y": 2660,
+      "w": 400,
+      "text": "THE VOCABULARY\nWhat the Go template implements: five class marks, three file statuses, the type scale and the font stacks.\n\nHue and lightness both vary across the five, so colour alone is never the signal — the name and the rule carry it. Rightmost column on each row is the same mark in grayscale, as the proof."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

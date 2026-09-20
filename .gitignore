@@ -34,3 +34,6 @@ go.work.sum
 # Task artifacts
 .build/
 .test/
+
+# Seeded design canvas (generated; re-seed from design/*.dc.html)
+design/franking-html-report.html

@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #faf8f3;
+      color: #1c1917;
+      font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #2a6478; text-decoration: none; border-bottom: 1px solid #c3d2d8; }
+    a:hover { color: #1c1917; border-bottom-color: #1c1917; }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .caps { text-transform: uppercase; letter-spacing: 0.14em; }
+    .srow:hover { background: #f4f0e8; }
+  </style>
+</helmet>
+
+<div style="padding: 56px 72px 64px 72px">
+
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 40px">
+    <div>
+      <div class="caps" style="font-size: 11px; color: #78716c; margin-bottom: 14px">DMARC aggregate report</div>
+      <div style="font-size: 40px; line-height: 1.1; letter-spacing: -0.01em">justplainsimple.com</div>
+      <div style="font-size: 16px; color: #57534e; margin-top: 10px">17 – 18 September 2026</div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px; padding-top: 4px">
+      <svg width="62" height="40" viewBox="0 0 62 40" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="60" height="38" rx="3" stroke="#c9c1b4" stroke-width="1.5"
+              stroke-dasharray="4 3"></rect>
+        <path d="M9 14c3-3 6 3 9 0s6 3 9 0" stroke="#78716c" stroke-width="1.5" stroke-linecap="round"></path>
+        <path d="M9 20c3-3 6 3 9 0s6 3 9 0" stroke="#78716c" stroke-width="1.5" stroke-linecap="round"></path>
+        <path d="M9 26c3-3 6 3 9 0s6 3 9 0" stroke="#78716c" stroke-width="1.5" stroke-linecap="round"></path>
+        <path d="M38 13v14M38 13h8a3.5 3.5 0 0 1 0 7h-8" stroke="#78716c" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      <div class="mono" style="font-size: 11px; color: #78716c">2026-09-19 21:48</div>
+    </div>
+  </div>
+
+  <div style="height: 1px; background: #1c1917; margin: 28px 0 0 0"></div>
+  <div style="height: 1px; background: #ddd7cc; margin: 3px 0 44px 0"></div>
+
+  <div style="display: flex; align-items: baseline; gap: 28px; flex-wrap: wrap">
+    <div style="font-size: 88px; line-height: 0.92; letter-spacing: -0.03em; color: #2f6b4f">100%</div>
+    <div style="max-width: 560px; font-size: 21px; line-height: 1.5; color: #44403c; text-wrap: pretty">
+      of <span class="mono" style="font-size: 19px">17</span> messages carried a valid mark
+      across <span class="mono" style="font-size: 19px">2</span> sending addresses.
+      <span style="color: #2f6b4f">Nothing needs your attention.</span>
+    </div>
+  </div>
+
+  <div style="margin-top: 32px; display: flex; height: 7px; background: #e8e2d6; border-radius: 1px; overflow: hidden">
+    <div style="width: 100%; background: #2f6b4f"></div>
+  </div>
+  <div style="display: flex; justify-content: space-between; margin-top: 9px; font-size: 11px; color: #78716c">
+    <span class="mono">17 passed</span>
+    <span class="mono">0 did not</span>
+  </div>
+
+  <div style="margin-top: 26px; padding: 16px 20px; background: #eef2ec; border-left: 3px solid #2f6b4f;
+              font-size: 15px; line-height: 1.6; color: #44403c; text-wrap: pretty">
+    Published policy <span class="mono" style="font-size: 14px">p=none</span> for the full range, and every
+    message authenticated. This is the state in which moving to
+    <span class="mono" style="font-size: 14px">p=quarantine</span> is safe — watch for a few more clean
+    ranges first, then tighten.
+  </div>
+
+  <div class="caps" style="font-size: 11px; color: #78716c; margin: 52px 0 0 0">What was read</div>
+  <div style="height: 1px; background: #ddd7cc; margin: 10px 0 22px 0"></div>
+
+  <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 28px">
+    <div>
+      <div class="mono" style="font-size: 30px; letter-spacing: -0.02em">1</div>
+      <div style="font-size: 13px; color: #78716c; margin-top: 4px">file found</div>
+    </div>
+    <div>
+      <div class="mono" style="font-size: 30px; letter-spacing: -0.02em">1</div>
+      <div style="font-size: 13px; color: #78716c; margin-top: 4px">parsed</div>
+    </div>
+    <div>
+      <div class="mono" style="font-size: 30px; letter-spacing: -0.02em; color: #78716c">0</div>
+      <div style="font-size: 13px; color: #78716c; margin-top: 4px">skipped</div>
+    </div>
+    <div>
+      <div class="mono" style="font-size: 30px; letter-spacing: -0.02em; color: #78716c">0</div>
+      <div style="font-size: 13px; color: #78716c; margin-top: 4px">with errors</div>
+    </div>
+    <div>
+      <div class="mono" style="font-size: 30px; letter-spacing: -0.02em">1</div>
+      <div style="font-size: 13px; color: #78716c; margin-top: 4px">day covered</div>
+    </div>
+  </div>
+
+  <!-- The empty-actions state: a statement, not a blank panel. -->
+  <div class="caps" style="font-size: 11px; color: #78716c; margin: 52px 0 0 0">What needs doing</div>
+  <div style="height: 1px; background: #ddd7cc; margin: 10px 0 22px 0"></div>
+
+  <div style="display: flex; align-items: center; gap: 18px; padding: 26px 28px; background: #ffffff;
+              border: 1px solid #e0e7de; border-radius: 2px">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex-shrink: 0">
+      <circle cx="12" cy="12" r="9.25" stroke="#2f6b4f" stroke-width="1.5"></circle>
+      <path d="M7.75 12.25l2.9 2.9 5.6-5.6" stroke="#2f6b4f" stroke-width="1.7"
+            stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+    <div style="font-size: 17px; line-height: 1.55; color: #44403c; text-wrap: pretty">
+      Nothing. Both sending addresses aligned on DKIM <em>and</em> SPF for every message in the range.
+    </div>
+  </div>
+
+  <div class="caps" style="font-size: 11px; color: #78716c; margin: 52px 0 0 0">Every sending address</div>
+  <div style="height: 1px; background: #ddd7cc; margin: 10px 0 20px 0"></div>
+
+  <div style="display: grid; grid-template-columns: 190px 1fr 96px 84px 84px 1fr 118px;
+              align-items: center; padding: 0 12px 9px 12px; border-bottom: 1px solid #1c1917">
+    <div class="caps" style="font-size: 10px; color: #78716c">Address</div>
+    <div class="caps" style="font-size: 10px; color: #78716c">Reverse name</div>
+    <div class="caps" style="font-size: 10px; color: #78716c; text-align: right">Msgs ▾</div>
+    <div class="caps" style="font-size: 10px; color: #78716c; text-align: right">DKIM</div>
+    <div class="caps" style="font-size: 10px; color: #78716c; text-align: right">SPF</div>
+    <div class="caps" style="font-size: 10px; color: #78716c; padding-left: 22px">SPF domain</div>
+    <div class="caps" style="font-size: 10px; color: #78716c; text-align: right">Class</div>
+  </div>
+
+  <div class="srow" style="display: grid; grid-template-columns: 190px 1fr 96px 84px 84px 1fr 118px;
+              align-items: center; padding: 13px 12px; border-bottom: 1px solid #ece7dc">
+    <div class="mono" style="font-size: 14px">209.85.220.69</div>
+    <div class="mono" style="font-size: 12px; color: #78716c">mail-sor-f69.google.com</div>
+    <div style="text-align: right">
+      <div class="mono" style="font-size: 14px">15</div>
+      <div style="height: 2px; background: #ddd7cc; margin-top: 4px; margin-left: auto; width: 62px">
+        <div style="height: 2px; background: #2f6b4f; width: 100%"></div>
+      </div>
+    </div>
+    <div class="mono" style="font-size: 13px; text-align: right; color: #44403c">100%</div>
+    <div class="mono" style="font-size: 13px; text-align: right; color: #44403c">100%</div>
+    <div class="mono" style="font-size: 12px; color: #57534e; padding-left: 22px">justplainsimple.com</div>
+    <div style="text-align: right">
+      <span class="caps mono" style="font-size: 10px; color: #2f6b4f; border-bottom: 2px solid #2f6b4f;
+            padding-bottom: 2px">PASS</span>
+    </div>
+  </div>
+
+  <div class="srow" style="display: grid; grid-template-columns: 190px 1fr 96px 84px 84px 1fr 118px;
+              align-items: center; padding: 13px 12px; border-bottom: 1px solid #ece7dc">
+    <div class="mono" style="font-size: 14px">209.85.220.41</div>
+    <div class="mono" style="font-size: 12px; color: #78716c">mail-sor-f41.google.com</div>
+    <div style="text-align: right">
+      <div class="mono" style="font-size: 14px">2</div>
+      <div style="height: 2px; background: #ddd7cc; margin-top: 4px; margin-left: auto; width: 62px">
+        <div style="height: 2px; background: #2f6b4f; width: 13%"></div>
+      </div>
+    </div>
+    <div class="mono" style="font-size: 13px; text-align: right; color: #44403c">100%</div>
+    <div class="mono" style="font-size: 13px; text-align: right; color: #44403c">100%</div>
+    <div class="mono" style="font-size: 12px; color: #57534e; padding-left: 22px">justplainsimple.com</div>
+    <div style="text-align: right">
+      <span class="caps mono" style="font-size: 10px; color: #2f6b4f; border-bottom: 2px solid #2f6b4f;
+            padding-bottom: 2px">PASS</span>
+    </div>
+  </div>
+
+  <div style="height: 1px; background: #ddd7cc; margin: 52px 0 0 0"></div>
+  <div style="height: 1px; background: #1c1917; margin: 3px 0 22px 0"></div>
+  <div style="display: flex; justify-content: space-between; gap: 40px; flex-wrap: wrap; font-size: 12px; color: #78716c">
+    <div style="max-width: 560px; line-height: 1.7; text-wrap: pretty">
+      Reverse names were resolved against your DNS resolver, which means these source addresses
+      were sent to it. Every input file was opened read-only; nothing was written or executed.
+    </div>
+    <div class="mono" style="text-align: right; line-height: 1.7">
+      franking 1.0.0<br>
+      <span style="color: #78716c">franking -html -resolve report.html ./reports</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

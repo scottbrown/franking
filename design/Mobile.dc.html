@@ -1,0 +1,197 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #faf8f3;
+      color: #1c1917;
+      font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #2a6478; text-decoration: none; border-bottom: 1px solid #c3d2d8; }
+    a:hover { color: #1c1917; border-bottom-color: #1c1917; }
+    button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+    button:focus-visible { outline: 2px solid #2a6478; outline-offset: 2px; }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .caps { text-transform: uppercase; letter-spacing: 0.14em; }
+  </style>
+</helmet>
+
+<div style="padding: 28px 20px 40px 20px">
+
+  <div class="caps" style="font-size: 10px; color: #78716c; margin-bottom: 10px">DMARC aggregate report</div>
+  <div style="font-size: 26px; line-height: 1.15; letter-spacing: -0.01em">example.ca</div>
+  <div style="font-size: 14px; color: #57534e; margin-top: 7px">12 – 18 September 2026</div>
+
+  <div style="height: 1px; background: #1c1917; margin: 20px 0 0 0"></div>
+  <div style="height: 1px; background: #ddd7cc; margin: 3px 0 28px 0"></div>
+
+  <div style="font-size: 62px; line-height: 0.92; letter-spacing: -0.03em; color: #a8541f">91.1%</div>
+  <div style="font-size: 17px; line-height: 1.5; color: #44403c; margin-top: 14px; text-wrap: pretty">
+    of <span class="mono" style="font-size: 15px">827</span> messages carried a valid mark across
+    <span class="mono" style="font-size: 15px">8</span> addresses.
+    <span style="color: #a8541f">Four need attention.</span>
+  </div>
+
+  <div style="margin-top: 22px; display: flex; height: 7px; background: #e8e2d6; border-radius: 1px; overflow: hidden">
+    <div style="width: 91.1%; background: #a8541f"></div>
+  </div>
+  <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: #78716c">
+    <span class="mono">753 passed</span>
+    <span class="mono">74 did not</span>
+  </div>
+
+  <div style="margin-top: 22px; padding: 14px 16px; background: #f2ede2; border-left: 3px solid #78716c;
+              font-size: 14px; line-height: 1.6; color: #44403c; text-wrap: pretty">
+    Published policy <span class="mono" style="font-size: 13px">p=none</span>. Below 100 per cent, and
+    some of what is failing is yours — clear the sources below before tightening.
+  </div>
+
+  <div class="caps" style="font-size: 10px; color: #78716c; margin: 36px 0 0 0">What needs doing</div>
+  <div style="height: 1px; background: #ddd7cc; margin: 9px 0 18px 0"></div>
+
+  <!-- On a phone the action block stacks: mark, advice, then the sources.
+       Every group Main renders appears here too — the phone drops columns,
+       never findings. -->
+  <div style="display: flex; flex-direction: column; gap: 24px">
+    <sc-for list="{{groups}}" as="group" hint-placeholder-count="3">
+      <div>
+        <div class="caps mono" style="font-size: 10px; color: {{group.colour}}">{{group.name}}</div>
+        <div style="height: 2px; background: {{group.colour}}; margin-top: 5px; width: 54px"></div>
+        <div class="mono" style="font-size: 11px; color: #78716c; margin-top: 7px">{{group.tally}}</div>
+        <div style="font-size: 14px; line-height: 1.55; color: #44403c; font-style: italic; margin: 11px 0;
+                    text-wrap: pretty">{{group.advice}}</div>
+        <div style="display: flex; flex-direction: column; gap: 7px">
+          <sc-for list="{{group.sources}}" as="src" hint-placeholder-count="2">
+            <div style="padding: 11px 13px; background: #ffffff; border: 1px solid #e8e2d6; border-radius: 2px">
+              <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px">
+                <span class="mono" style="font-size: 14px">{{src.ip}}</span>
+                <span class="mono" style="font-size: 12px; color: #57534e">{{src.msgsLabel}}</span>
+              </div>
+              <div class="mono" style="font-size: 12px; color: #57534e; margin-top: 5px">
+                <span style="color: #78716c">spf:</span> {{src.spfDomain}}
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="margin-top: 20px; padding: 12px 14px; background: #f5f2ea; border-left: 3px solid #cfc7b8;
+              font-size: 13px; line-height: 1.6; color: #57534e; text-wrap: pretty">
+    Two sources pass on both mechanisms. Two more are DKIM-aligned only, which is what forwarded mail
+    looks like — no action.
+  </div>
+
+  <div class="caps" style="font-size: 10px; color: #78716c; margin: 36px 0 0 0">Every sending address</div>
+  <div style="height: 1px; background: #ddd7cc; margin: 9px 0 16px 0"></div>
+
+  <!-- All six chips Main generates, at a 44px target. -->
+  <div style="display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 18px">
+    <sc-for list="{{chips}}" as="chip" hint-placeholder-count="6">
+      <button type="button" class="caps mono" aria-pressed="{{chip.pressed}}"
+              style="font-size: 10px; padding: 14px 13px; min-height: 44px; border: 1px solid {{chip.border}};
+                     background: {{chip.bg}}; color: {{chip.fg}}; border-radius: 2px">{{chip.label}}</button>
+    </sc-for>
+  </div>
+
+  <!-- The 7-column table becomes one stacked record per address. -->
+  <div style="display: flex; flex-direction: column; gap: 0">
+    <sc-for list="{{rows}}" as="row" hint-placeholder-count="8">
+      <div style="padding: 14px 0; border-bottom: 1px solid #ece7dc">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px">
+          <span class="mono" style="font-size: 15px">{{row.ip}}</span>
+          <span class="caps mono" style="font-size: 10px; color: {{row.colour}};
+                border-bottom: 2px solid {{row.colour}}; padding-bottom: 2px">{{row.cls}}</span>
+        </div>
+        <div style="display: flex; gap: 18px; margin-top: 9px; font-size: 12px; color: #57534e">
+          <span class="mono">{{row.msgs}} msgs</span>
+          <span class="mono">dkim {{row.dkim}}</span>
+          <span class="mono">spf {{row.spf}}</span>
+        </div>
+        <div class="mono" style="font-size: 12px; color: #57534e; margin-top: 6px">{{row.spfDomain}}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="margin-top: 12px; font-size: 13px; color: #78716c; font-style: italic">
+    Showing all 8 addresses, busiest first.
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const colours = {
+      'PASS': '#2f6b4f', 'DKIM-ONLY': '#2a6478', 'SPF-ONLY': '#8a5d12',
+      'PARTIAL': '#a8541f', 'FAIL': '#9b2c2c'
+    };
+    const rows = [
+      { ip: '192.0.2.25',    msgs: '420', dkim: '100%', spf: '100%', cls: 'PASS',      spfDomain: 'example.ca' },
+      { ip: '203.0.113.10',  msgs: '180', dkim: '100%', spf: '0%',   cls: 'DKIM-ONLY', spfDomain: 'mail.vendor.net' },
+      { ip: '198.51.100.4',  msgs: '96',  dkim: '62%',  spf: '41%',  cls: 'PARTIAL',   spfDomain: 'mx.example.ca' },
+      { ip: '203.0.113.99',  msgs: '54',  dkim: '0%',   spf: '100%', cls: 'SPF-ONLY',  spfDomain: 'bounce.example.ca' },
+      { ip: '198.51.100.77', msgs: '38',  dkim: '0%',   spf: '0%',   cls: 'FAIL',      spfDomain: 'bulk.example-sender.net' },
+      { ip: '192.0.2.200',   msgs: '21',  dkim: '100%', spf: '0%',   cls: 'DKIM-ONLY', spfDomain: 'news.vendor.net' },
+      { ip: '203.0.113.203', msgs: '11',  dkim: '0%',   spf: '0%',   cls: 'FAIL',      spfDomain: '—' },
+      { ip: '2001:db8::1',   msgs: '7',   dkim: '100%', spf: '100%', cls: 'PASS',      spfDomain: 'example.ca' }
+    ];
+
+    const chipSpec = [
+      { label: 'all 8',       on: true },
+      { label: 'FAIL 2',      on: false },
+      { label: 'PARTIAL 1',   on: false },
+      { label: 'SPF-ONLY 1',  on: false },
+      { label: 'DKIM-ONLY 2', on: false },
+      { label: 'PASS 2',      on: false }
+    ];
+
+    return {
+      groups: [
+        {
+          name: 'FAIL', colour: colours['FAIL'], tally: '2 sources · 49 msgs',
+          advice: 'Unauthorized, or a sender of yours with no SPF or DKIM record. Identify the SPF domain first.',
+          sources: [
+            { ip: '198.51.100.77', msgsLabel: '38 msgs', spfDomain: 'bulk.example-sender.net' },
+            { ip: '203.0.113.203', msgsLabel: '11 msgs', spfDomain: '—' }
+          ]
+        },
+        {
+          name: 'PARTIAL', colour: colours['PARTIAL'], tally: '1 source · 96 msgs',
+          advice: 'The configuration is not complete. Some mail from here authenticates and some does not.',
+          sources: [{ ip: '198.51.100.4', msgsLabel: '96 msgs', spfDomain: 'mx.example.ca' }]
+        },
+        {
+          name: 'SPF-ONLY', colour: colours['SPF-ONLY'], tally: '1 source · 54 msgs',
+          advice: 'The sender does not sign. Add DKIM if this sender is yours.',
+          sources: [{ ip: '203.0.113.99', msgsLabel: '54 msgs', spfDomain: 'bounce.example.ca' }]
+        }
+      ],
+      chips: chipSpec.map((c) => ({
+        label: c.label,
+        pressed: c.on ? 'true' : 'false',
+        bg: c.on ? '#2a6478' : 'transparent',
+        fg: c.on ? '#ffffff' : '#57534e',
+        border: c.on ? '#2a6478' : '#ddd7cc'
+      })),
+      rows: rows.map((r) => ({ ...r, colour: colours[r.cls] }))
+    };
+  }
+}
+</script>
+</body>
+</html>

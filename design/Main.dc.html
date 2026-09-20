@@ -1,0 +1,449 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #faf8f3;
+      color: #1c1917;
+      font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #2a6478; text-decoration: none; border-bottom: 1px solid #c3d2d8; }
+    a:hover { color: #1c1917; border-bottom-color: #1c1917; }
+    button { font: inherit; color: inherit; background: none; border: none; padding: 0; cursor: pointer; }
+    button:focus-visible, input:focus-visible { outline: 2px solid #2a6478; outline-offset: 2px; }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .caps { text-transform: uppercase; letter-spacing: 0.14em; }
+    .chip:hover { border-color: #1c1917 !important; color: #1c1917 !important; }
+    .sortable:hover { color: #1c1917 !important; }
+    .srow:hover { background: #f4f0e8; }
+    .vh {
+      position: absolute; width: 1px; height: 1px; overflow: hidden;
+      clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+    }
+    @media print {
+      .noprint { display: none !important; }
+      body { background: #ffffff; }
+    }
+  </style>
+</helmet>
+
+<div style="padding: 56px 72px 64px 72px; max-width: 1080px">
+
+  <!-- ─── Masthead ─────────────────────────────────────────── -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 40px">
+    <div>
+      <div class="caps" style="font-size: 11px; color: #78716c; margin-bottom: 14px">DMARC aggregate report</div>
+      <div style="font-size: 40px; line-height: 1.1; letter-spacing: -0.01em">{{policyDomain}}</div>
+      <div style="font-size: 16px; color: #57534e; margin-top: 10px">{{rangeLabel}}</div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px; padding-top: 4px">
+      <svg width="62" height="40" viewBox="0 0 62 40" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="60" height="38" rx="3" stroke="#a8a096" stroke-width="1.5"
+              stroke-dasharray="4 3"></rect>
+        <path d="M9 14c3-3 6 3 9 0s6 3 9 0" stroke="#8a827a" stroke-width="1.5" stroke-linecap="round"></path>
+        <path d="M9 20c3-3 6 3 9 0s6 3 9 0" stroke="#8a827a" stroke-width="1.5" stroke-linecap="round"></path>
+        <path d="M9 26c3-3 6 3 9 0s6 3 9 0" stroke="#8a827a" stroke-width="1.5" stroke-linecap="round"></path>
+        <path d="M38 13v14M38 13h8a3.5 3.5 0 0 1 0 7h-8" stroke="#57534e" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      <div class="mono" style="font-size: 11px; color: #78716c">{{generatedAt}}</div>
+    </div>
+  </div>
+
+  <div style="height: 1px; background: #1c1917; margin: 28px 0 0 0"></div>
+  <div style="height: 1px; background: #ddd7cc; margin: 3px 0 44px 0"></div>
+
+  <!-- ─── The verdict ──────────────────────────────────────── -->
+  <div style="display: flex; align-items: baseline; gap: 28px; flex-wrap: wrap">
+    <div style="font-size: 88px; line-height: 0.92; letter-spacing: -0.03em; color: {{verdictColour}}">{{passRate}}</div>
+    <div style="max-width: 560px; font-size: 21px; line-height: 1.5; color: #44403c; text-wrap: pretty">
+      of <span class="mono" style="font-size: 19px">{{totalMessages}}</span> messages carried a valid mark
+      across <span class="mono" style="font-size: 19px">{{sourceCount}}</span> sending addresses.
+      <span style="color: {{verdictColour}}">{{verdictClause}}</span>
+    </div>
+  </div>
+
+  <div style="margin-top: 32px; display: flex; height: 7px; background: #e8e2d6; border-radius: 1px; overflow: hidden">
+    <div style="width: {{passWidth}}; background: {{verdictColour}}"></div>
+  </div>
+  <div style="display: flex; justify-content: space-between; margin-top: 9px; font-size: 11px; color: #78716c">
+    <span class="mono">{{passMessages}} passed</span>
+    <span class="mono">{{failMessages}} did not</span>
+  </div>
+
+  <div style="margin-top: 26px; padding: 16px 20px; background: #f2ede2; border-left: 3px solid #8a827a;
+              font-size: 15px; line-height: 1.6; color: #44403c; text-wrap: pretty">
+    Published policy <span class="mono" style="font-size: 14px">p={{policyP}}</span> for the full range.
+    {{policyAdvice}}
+  </div>
+
+  <!-- ─── Run summary ──────────────────────────────────────── -->
+  <div class="caps" style="font-size: 11px; color: #78716c; margin: 52px 0 0 0">What was read</div>
+  <div style="height: 1px; background: #ddd7cc; margin: 10px 0 22px 0"></div>
+
+  <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 28px">
+    <sc-for list="{{summaryStats}}" as="stat" hint-placeholder-count="5">
+      <div>
+        <div class="mono" style="font-size: 30px; letter-spacing: -0.02em; color: {{stat.tone}}">{{stat.value}}</div>
+        <div style="font-size: 13px; color: #57534e; margin-top: 4px">{{stat.label}}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ─── Actions ──────────────────────────────────────────── -->
+  <div class="caps" style="font-size: 11px; color: #78716c; margin: 52px 0 0 0">What needs doing</div>
+  <div style="height: 1px; background: #ddd7cc; margin: 10px 0 26px 0"></div>
+
+  <div style="display: flex; flex-direction: column; gap: 26px">
+    <sc-for list="{{actionGroups}}" as="group" hint-placeholder-count="3">
+      <div style="display: flex; gap: 26px; align-items: flex-start">
+        <div style="width: 132px; flex-shrink: 0; padding-top: 2px">
+          <div class="caps mono" style="font-size: 11px; color: {{group.colour}}">{{group.name}}</div>
+          <div style="height: 2px; background: {{group.colour}}; margin-top: 6px; width: 100%"></div>
+          <div class="mono" style="font-size: 11px; color: #78716c; margin-top: 7px">{{group.tally}}</div>
+        </div>
+        <div style="flex-grow: 1">
+          <div style="font-size: 16px; line-height: 1.55; color: #44403c; font-style: italic; margin-bottom: 12px;
+                      max-width: 620px; text-wrap: pretty">{{group.advice}}</div>
+          <div style="display: flex; flex-direction: column; gap: 7px">
+            <sc-for list="{{group.sources}}" as="src" hint-placeholder-count="2">
+              <div style="display: flex; align-items: baseline; gap: 16px; padding: 7px 12px; background: #ffffff;
+                          border: 1px solid #e8e2d6; border-radius: 2px">
+                <span class="mono" style="font-size: 14px; width: 132px; flex-shrink: 0">{{src.ip}}</span>
+                <span class="mono" style="font-size: 13px; color: #57534e; width: 96px; flex-shrink: 0">{{src.msgsLabel}}</span>
+                <span style="font-size: 13px; color: #57534e">
+                  <span style="color: #78716c">spf:</span> <span class="mono" style="font-size: 13px">{{src.spfDomain}}</span>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="margin-top: 24px; padding: 13px 16px; background: #f5f2ea; border-left: 3px solid #cfc7b8;
+              font-size: 14px; line-height: 1.6; color: #57534e; max-width: 780px; text-wrap: pretty">{{noActionNote}}</div>
+
+  <!-- ─── Sources ──────────────────────────────────────────── -->
+  <div class="caps" style="font-size: 11px; color: #78716c; margin: 52px 0 0 0">Every sending address</div>
+  <div style="height: 1px; background: #ddd7cc; margin: 10px 0 20px 0"></div>
+
+  <div class="noprint" style="display: flex; justify-content: space-between; align-items: center; gap: 24px;
+              flex-wrap: wrap; margin-bottom: 18px">
+    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+      <sc-for list="{{filterChips}}" as="chip" hint-placeholder-count="6">
+        <button type="button" class="chip caps mono" onClick="{{chip.pick}}" aria-pressed="{{chip.pressed}}"
+                style="font-size: 10px; padding: 10px 12px; min-height: 36px; border: 1px solid {{chip.border}};
+                       color: {{chip.fg}}; background: {{chip.bg}}; border-radius: 2px">{{chip.label}}</button>
+      </sc-for>
+    </div>
+    <div style="display: flex; align-items: center; gap: 9px; border-bottom: 1px solid #ddd7cc; padding-bottom: 5px">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="7" cy="7" r="4.5" stroke="#78716c" stroke-width="1.5"></circle>
+        <path d="M10.5 10.5L14 14" stroke="#78716c" stroke-width="1.5" stroke-linecap="round"></path>
+      </svg>
+      <label class="vh" for="src-filter">Filter addresses</label>
+      <input id="src-filter" class="mono" type="text" value="{{query}}" onInput="{{onQuery}}"
+             placeholder="filter by address or domain"
+             style="border: none; background: transparent; font-size: 13px; color: #1c1917; width: 210px; padding: 2px 0">
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 190px 1fr 96px 84px 84px 1fr 118px; gap: 0;
+              align-items: center; padding: 0 12px 9px 12px; border-bottom: 1px solid #1c1917">
+    <button type="button" class="caps sortable" onClick="{{sortByIP}}" aria-sort="{{ipSort}}"
+            style="font-size: 10px; color: #57534e; text-align: left">Address {{ipArrow}}</button>
+    <div class="caps" style="font-size: 10px; color: #57534e">Reverse name</div>
+    <button type="button" class="caps sortable" onClick="{{sortByMsgs}}" aria-sort="{{msgsSort}}"
+            style="font-size: 10px; color: #57534e; text-align: right; display: block; width: 100%">Msgs {{msgsArrow}}</button>
+    <div class="caps" style="font-size: 10px; color: #57534e; text-align: right">DKIM</div>
+    <div class="caps" style="font-size: 10px; color: #57534e; text-align: right">SPF</div>
+    <div class="caps" style="font-size: 10px; color: #57534e; padding-left: 22px">SPF domain</div>
+    <div class="caps" style="font-size: 10px; color: #57534e; text-align: right">Class</div>
+  </div>
+
+  <sc-for list="{{rows}}" as="row" hint-placeholder-count="8">
+    <div class="srow" style="display: grid; grid-template-columns: 190px 1fr 96px 84px 84px 1fr 118px; gap: 0;
+                align-items: center; padding: {{rowPad}} 12px; border-bottom: 1px solid #ece7dc">
+      <div class="mono" style="font-size: 14px">{{row.ip}}</div>
+      <div class="mono" style="font-size: 12px; color: #78716c">{{row.host}}</div>
+      <div style="text-align: right">
+        <div class="mono" style="font-size: 14px">{{row.msgs}}</div>
+        <div style="height: 2px; background: #ddd7cc; margin-top: 4px; margin-left: auto; width: 62px">
+          <div style="height: 2px; background: {{row.colour}}; width: {{row.shareWidth}}"></div>
+        </div>
+      </div>
+      <div class="mono" style="font-size: 13px; text-align: right; color: {{row.dkimTone}}">{{row.dkim}}</div>
+      <div class="mono" style="font-size: 13px; text-align: right; color: {{row.spfTone}}">{{row.spf}}</div>
+      <div class="mono" style="font-size: 12px; color: #57534e; padding-left: 22px">{{row.spfDomain}}</div>
+      <div style="text-align: right">
+        <span class="caps mono" style="font-size: 10px; color: {{row.colour}};
+              border-bottom: 2px solid {{row.colour}}; padding-bottom: 2px">{{row.cls}}</span>
+      </div>
+    </div>
+  </sc-for>
+
+  <div style="margin-top: 12px; font-size: 13px; color: #78716c; font-style: italic">{{rowNote}}</div>
+
+  <!-- ─── Files ────────────────────────────────────────────── -->
+  <sc-if value="{{showFiles}}" hint-placeholder-val="{{ true }}">
+    <div>
+      <div class="caps" style="font-size: 11px; color: #78716c; margin: 52px 0 0 0">Files read</div>
+      <div style="height: 1px; background: #ddd7cc; margin: 10px 0 18px 0"></div>
+      <div style="display: flex; flex-direction: column; gap: 0">
+        <sc-for list="{{files}}" as="file" hint-placeholder-count="6">
+          <div style="display: grid; grid-template-columns: 1fr 150px 92px 92px 108px; gap: 0; align-items: baseline;
+                      padding: 9px 12px; border-bottom: 1px solid #ece7dc">
+            <div class="mono" style="font-size: 12px; color: #44403c">{{file.name}}</div>
+            <div style="font-size: 13px; color: #57534e">{{file.org}}</div>
+            <div class="mono" style="font-size: 12px; color: #57534e; text-align: right">{{file.records}}</div>
+            <div class="mono" style="font-size: 12px; color: #57534e; text-align: right">{{file.messages}}</div>
+            <div class="caps mono" style="font-size: 10px; text-align: right; color: {{file.tone}}">{{file.status}}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top: 11px; font-size: 13px; color: #9b2c2c; font-style: italic">{{fileNote}}</div>
+    </div>
+  </sc-if>
+
+  <!-- ─── Provenance footer ────────────────────────────────── -->
+  <div style="height: 1px; background: #ddd7cc; margin: 52px 0 0 0"></div>
+  <div style="height: 1px; background: #1c1917; margin: 3px 0 22px 0"></div>
+  <div style="display: flex; justify-content: space-between; gap: 40px; flex-wrap: wrap; font-size: 12px; color: #57534e">
+    <div style="max-width: 560px; line-height: 1.7; text-wrap: pretty">
+      Reverse names were resolved against your DNS resolver, which means these source addresses
+      were sent to it. Every input file was opened read-only; nothing was written, extracted or
+      executed. Limits in effect: <span class="mono">50MB</span> per file,
+      <span class="mono">64MB</span> decompressed, <span class="mono">200:1</span> ratio.
+    </div>
+    <div class="mono" style="text-align: right; line-height: 1.7">
+      franking 1.0.0<br>
+      <span style="color: #78716c">franking -html -resolve report.html ./reports</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{
+  "accent": {"editor": "color", "default": "#2a6478", "options": ["#2a6478", "#9b2c2c", "#2f6b4f", "#7c4a8d"], "section": "Theme"},
+  "density": {"editor": "enum", "default": "comfortable", "options": ["comfortable", "compact"], "section": "Layout"},
+  "showFiles": {"editor": "boolean", "default": true, "section": "Layout"}
+}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: 'all', query: '', sortKey: 'msgs', sortDir: 'desc' };
+  }
+
+  palette() {
+    return {
+      'PASS':      '#2f6b4f',
+      'DKIM-ONLY': '#2a6478',
+      'SPF-ONLY':  '#8a5d12',
+      'PARTIAL':   '#a8541f',
+      'FAIL':      '#9b2c2c'
+    };
+  }
+
+  advice() {
+    return {
+      'PASS':      'Known good sender. No action.',
+      'DKIM-ONLY': 'DKIM is aligned and SPF is not. Normal for forwarded mail — no action, though the sender has no margin left if signing breaks.',
+      'SPF-ONLY':  'The sender does not sign. Add DKIM if this sender is yours.',
+      'PARTIAL':   'The configuration is not complete. Some mail from here authenticates and some does not — investigate before tightening policy.',
+      'FAIL':      'Unauthorized, or a sender of yours with no SPF or DKIM record. Identify the SPF domain first.'
+    };
+  }
+
+  // Classes that put a source on the action list. DKIM-ONLY and PASS do not:
+  // both are a correct end state, so they belong in the closing note.
+  actionable() { return ['FAIL', 'PARTIAL', 'SPF-ONLY']; }
+
+  // pass is the DMARC result — the UNION of aligned DKIM and aligned SPF.
+  // It cannot be derived from the two percentages, so it is carried per row.
+  // Every spfDomain on a row with aligned SPF above 0% is under the policy
+  // domain; a non-aligning envelope domain is exactly why SPF reads 0%.
+  sources() {
+    return [
+      { ip: '192.0.2.25',    host: 'mta-01.example.ca',       msgs: 420, pass: 420, dkim: 100, spf: 100, cls: 'PASS',      spfDomain: 'example.ca' },
+      { ip: '203.0.113.10',  host: 'relay.mail-vendor.net',   msgs: 180, pass: 180, dkim: 100, spf: 0,   cls: 'DKIM-ONLY', spfDomain: 'mail.vendor.net' },
+      { ip: '198.51.100.4',  host: 'out-04.example.ca',       msgs: 96,  pass: 71,  dkim: 62,  spf: 41,  cls: 'PARTIAL',   spfDomain: 'mx.example.ca' },
+      { ip: '203.0.113.99',  host: 'ship.example-sender.net', msgs: 54,  pass: 54,  dkim: 0,   spf: 100, cls: 'SPF-ONLY',  spfDomain: 'bounce.example.ca' },
+      { ip: '198.51.100.77', host: '—',                  msgs: 38,  pass: 0,   dkim: 0,   spf: 0,   cls: 'FAIL',      spfDomain: 'bulk.example-sender.net' },
+      { ip: '192.0.2.200',   host: 'nl.example.ca',           msgs: 21,  pass: 21,  dkim: 100, spf: 0,   cls: 'DKIM-ONLY', spfDomain: 'news.vendor.net' },
+      { ip: '203.0.113.203', host: '—',                  msgs: 11,  pass: 0,   dkim: 0,   spf: 0,   cls: 'FAIL',      spfDomain: '—' },
+      { ip: '2001:db8::1',   host: 'mta-v6.example.ca',       msgs: 7,   pass: 7,   dkim: 100, spf: 100, cls: 'PASS',      spfDomain: 'example.ca' }
+    ];
+  }
+
+  fileRows() {
+    return [
+      { name: 'google.com!example.ca!1789430400!1789516799.zip',       org: 'google.com',         records: '14', messages: '402', status: 'ok',      tone: '#57534e' },
+      { name: 'enterprise.protection.outlook.com!example.ca!...zip',   org: 'Outlook Protection', records: '9',  messages: '211', status: 'ok',      tone: '#57534e' },
+      { name: 'yahoo.com!example.ca!1789603200.xml.gz',                org: 'Yahoo',              records: '6',  messages: '110', status: 'ok',      tone: '#57534e' },
+      { name: 'mailer.example.ca!example.ca!1789689600.xml',           org: 'mailer.example.ca',  records: '4',  messages: '104', status: 'ok',      tone: '#57534e' },
+      { name: 'august-window.xml',                                     org: '—',             records: '0',  messages: '0',   status: 'skipped', tone: '#78716c' },
+      { name: 'truncated-report.xml',                                  org: '—',             records: '0',  messages: '0',   status: 'error',   tone: '#9b2c2c' }
+    ];
+  }
+
+  words() { return ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine']; }
+
+  renderVals() {
+    const accent = this.props.accent ?? '#2a6478';
+    const compact = (this.props.density ?? 'comfortable') === 'compact';
+    const colours = this.palette();
+    const advice = this.advice();
+    const actionable = this.actionable();
+    const all = this.sources();
+    const words = this.words();
+
+    const totalMessages = all.reduce((n, s) => n + s.msgs, 0);
+    const passMessages = all.reduce((n, s) => n + s.pass, 0);
+    const shownRate = Math.round(passMessages / totalMessages * 1000) / 10;
+    const biggest = Math.max.apply(null, all.map((s) => s.msgs));
+
+    const order = ['FAIL', 'PARTIAL', 'SPF-ONLY', 'DKIM-ONLY', 'PASS'];
+    const chips = [{ key: 'all', label: 'all ' + all.length }].concat(
+      order.filter((c) => all.some((s) => s.cls === c))
+           .map((c) => ({ key: c, label: c + ' ' + all.filter((s) => s.cls === c).length }))
+    );
+    const filterChips = chips.map((c) => {
+      const on = this.state.filter === c.key;
+      const tint = c.key === 'all' ? accent : colours[c.key];
+      return {
+        label: c.label,
+        bg: on ? tint : 'transparent',
+        fg: on ? '#ffffff' : '#57534e',
+        border: on ? tint : '#ddd7cc',
+        pressed: on ? 'true' : 'false',
+        pick: () => this.setState({ filter: c.key })
+      };
+    });
+
+    const q = this.state.query.trim().toLowerCase();
+    let shown = all.filter((s) => this.state.filter === 'all' || s.cls === this.state.filter);
+    if (q) shown = shown.filter((s) => (s.ip + ' ' + s.host + ' ' + s.spfDomain).toLowerCase().indexOf(q) >= 0);
+    const dir = this.state.sortDir === 'desc' ? -1 : 1;
+    shown = shown.slice().sort((a, b) => this.state.sortKey === 'ip'
+      ? dir * a.ip.localeCompare(b.ip)
+      : dir * (a.msgs - b.msgs));
+
+    // A zero reads quieter than a live figure, but never below AA contrast:
+    // these are the most diagnostic numbers on the page.
+    const rows = shown.map((s) => ({
+      ip: s.ip,
+      host: s.host,
+      msgs: String(s.msgs),
+      shareWidth: Math.round(s.msgs / biggest * 100) + '%',
+      dkim: s.dkim + '%',
+      spf: s.spf + '%',
+      dkimTone: s.dkim === 0 ? '#78716c' : '#1c1917',
+      spfTone: s.spf === 0 ? '#78716c' : '#1c1917',
+      spfDomain: s.spfDomain,
+      cls: s.cls,
+      colour: colours[s.cls]
+    }));
+
+    const actionGroups = order.filter((c) => actionable.indexOf(c) >= 0 && all.some((s) => s.cls === c)).map((c) => {
+      const members = all.filter((s) => s.cls === c);
+      const tally = members.reduce((n, s) => n + s.msgs, 0);
+      return {
+        name: c,
+        colour: colours[c],
+        advice: advice[c],
+        tally: members.length + (members.length === 1 ? ' source' : ' sources') + ' · ' + tally + ' msgs',
+        sources: members.map((s) => ({ ip: s.ip, msgsLabel: s.msgs + ' msgs', spfDomain: s.spfDomain }))
+      };
+    });
+
+    const needing = all.filter((s) => actionable.indexOf(s.cls) >= 0).length;
+    const passing = all.filter((s) => s.cls === 'PASS').length;
+    const dkimOnly = all.filter((s) => s.cls === 'DKIM-ONLY').length;
+    const word = (n) => n < words.length ? words[n] : String(n);
+
+    const verdictColour = shownRate >= 100 ? colours['PASS']
+      : shownRate >= 90 ? colours['PARTIAL'] : colours['FAIL'];
+
+    const arrow = (key) => this.state.sortKey === key ? (this.state.sortDir === 'desc' ? '▾' : '▴') : '';
+    const sortState = (key) => this.state.sortKey !== key ? 'none'
+      : (this.state.sortDir === 'desc' ? 'descending' : 'ascending');
+
+    let noAction = word(passing) + (passing === 1 ? ' source passes' : ' sources pass')
+      + ' on both mechanisms.';
+    if (dkimOnly > 0) {
+      noAction += ' ' + word(dkimOnly).toLowerCase() + ' more '
+        + (dkimOnly === 1 ? 'is' : 'are') + ' DKIM-aligned only, which is what forwarded mail'
+        + ' looks like — no action, though ' + (dkimOnly === 1 ? 'it has' : 'they have')
+        + ' no margin left if signing breaks.';
+    }
+
+    return {
+      policyDomain: 'example.ca',
+      rangeLabel: '12 – 18 September 2026',
+      generatedAt: '2026-09-19 21:48',
+      policyP: 'none',
+      policyAdvice: shownRate >= 100
+        ? 'Every message authenticated, so tightening the policy is safe.'
+        : 'Below 100 per cent, and some of what is failing is yours — at p=quarantine it would land in spam, at p=reject it would be discarded. Clear the sources below first.',
+
+      passRate: shownRate.toFixed(1) + '%',
+      verdictColour: verdictColour,
+      verdictClause: needing === 0
+        ? 'Nothing needs your attention.'
+        : word(needing) + (needing === 1 ? ' source needs' : ' sources need') + ' attention.',
+      totalMessages: String(totalMessages),
+      sourceCount: String(all.length),
+      passMessages: String(passMessages),
+      failMessages: String(totalMessages - passMessages),
+      passWidth: shownRate + '%',
+
+      summaryStats: [
+        { value: '6', label: 'files found',  tone: '#1c1917' },
+        { value: '4', label: 'parsed',       tone: '#1c1917' },
+        { value: '1', label: 'skipped',      tone: '#57534e' },
+        { value: '1', label: 'with errors',  tone: '#9b2c2c' },
+        { value: '7', label: 'days covered', tone: '#1c1917' }
+      ],
+
+      actionGroups: actionGroups,
+      noActionNote: noAction,
+
+      filterChips: filterChips,
+      rows: rows,
+      rowPad: compact ? '7px' : '13px',
+      rowNote: rows.length === all.length
+        ? 'Showing all ' + all.length + ' addresses, busiest first.'
+        : 'Showing ' + rows.length + ' of ' + all.length + ' addresses.',
+      query: this.state.query,
+      onQuery: (e) => this.setState({ query: e.target.value }),
+      sortByIP: () => this.setState({ sortKey: 'ip', sortDir: this.state.sortKey === 'ip' && this.state.sortDir === 'asc' ? 'desc' : 'asc' }),
+      sortByMsgs: () => this.setState({ sortKey: 'msgs', sortDir: this.state.sortKey === 'msgs' && this.state.sortDir === 'desc' ? 'asc' : 'desc' }),
+      ipArrow: arrow('ip'),
+      msgsArrow: arrow('msgs'),
+      ipSort: sortState('ip'),
+      msgsSort: sortState('msgs'),
+
+      showFiles: this.props.showFiles ?? true,
+      files: this.fileRows(),
+      fileNote: 'truncated-report.xml — xml: syntax error at line 9. The run continued.'
+    };
+  }
+}
+</script>
+</body>
+</html>

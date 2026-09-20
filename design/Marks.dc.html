@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #faf8f3;
+      color: #1c1917;
+      font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #2a6478; text-decoration: none; border-bottom: 1px solid #c3d2d8; }
+    a:hover { color: #1c1917; border-bottom-color: #1c1917; }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .caps { text-transform: uppercase; letter-spacing: 0.14em; }
+    .grey { filter: grayscale(1); }
+  </style>
+</helmet>
+
+<div style="padding: 48px 56px 56px 56px">
+
+  <div class="caps" style="font-size: 11px; color: #78716c; margin-bottom: 12px">Specimen sheet</div>
+  <div style="font-size: 30px; line-height: 1.15; letter-spacing: -0.01em">The five class marks</div>
+  <div style="font-size: 15px; color: #57534e; margin-top: 9px; max-width: 620px; line-height: 1.6;
+              text-wrap: pretty">
+    A mark is the class name in letterspaced monospace over a 2px rule in its own hue. Never a filled
+    pill, and never colour alone — the rule and the name both carry the meaning, so the report stays
+    readable in grayscale and for anyone who does not see the hues apart.
+  </div>
+
+  <div style="height: 1px; background: #ddd7cc; margin: 30px 0 26px 0"></div>
+
+  <div style="display: flex; flex-direction: column; gap: 0">
+    <sc-for list="{{marks}}" as="mark" hint-placeholder-count="5">
+      <div style="display: grid; grid-template-columns: 140px 96px 1fr 120px; gap: 24px; align-items: center;
+                  padding: 15px 0; border-bottom: 1px solid #ece7dc">
+        <div>
+          <span class="caps mono" style="font-size: 11px; color: {{mark.colour}};
+                border-bottom: 2px solid {{mark.colour}}; padding-bottom: 2px">{{mark.name}}</span>
+        </div>
+        <div class="mono" style="font-size: 12px; color: #78716c">{{mark.hex}}</div>
+        <div style="font-size: 14px; color: #44403c; line-height: 1.5; text-wrap: pretty">{{mark.rule}}</div>
+        <div class="grey" style="text-align: right">
+          <span class="caps mono" style="font-size: 11px; color: {{mark.colour}};
+                border-bottom: 2px solid {{mark.colour}}; padding-bottom: 2px">{{mark.name}}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 11px; color: #78716c">
+    <span>hue and lightness both vary — the name and the rule carry the meaning, not the colour</span>
+    <span class="caps" style="font-size: 10px">grayscale check</span>
+  </div>
+
+  <!-- File status vocabulary -->
+  <div class="caps" style="font-size: 11px; color: #78716c; margin: 44px 0 0 0">File status</div>
+  <div style="height: 1px; background: #ddd7cc; margin: 10px 0 20px 0"></div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+    <div style="padding: 16px 18px; background: #ffffff; border: 1px solid #e8e2d6; border-radius: 2px">
+      <div class="caps mono" style="font-size: 10px; color: #78716c">ok</div>
+      <div style="font-size: 13px; color: #57534e; margin-top: 8px; line-height: 1.5">
+        Parsed and folded into the totals. Hidden unless the reader opens the file list.
+      </div>
+    </div>
+    <div style="padding: 16px 18px; background: #ffffff; border: 1px solid #e8e2d6; border-radius: 2px">
+      <div class="caps mono" style="font-size: 10px; color: #78716c">skipped</div>
+      <div style="font-size: 13px; color: #57534e; margin-top: 8px; line-height: 1.5">
+        A filter excluded it — wrong policy domain, or it ends before <span class="mono">-since</span>.
+      </div>
+    </div>
+    <div style="padding: 16px 18px; background: #fdf4f3; border: 1px solid #e8cfcb; border-radius: 2px">
+      <div class="caps mono" style="font-size: 10px; color: #9b2c2c">error</div>
+      <div style="font-size: 13px; color: #57534e; margin-top: 8px; line-height: 1.5">
+        Refused, with one sanitized reason. <strong>Always shown</strong>, even when the file list is closed.
+      </div>
+    </div>
+  </div>
+
+  <!-- Type scale -->
+  <div class="caps" style="font-size: 11px; color: #78716c; margin: 44px 0 0 0">Type</div>
+  <div style="height: 1px; background: #ddd7cc; margin: 10px 0 20px 0"></div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; align-items: baseline; gap: 24px">
+      <span class="mono" style="font-size: 11px; color: #78716c; width: 190px; flex-shrink: 0">verdict · 88px</span>
+      <span style="font-size: 88px; letter-spacing: -0.03em">91.1%</span>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 24px">
+      <span class="mono" style="font-size: 11px; color: #78716c; width: 190px; flex-shrink: 0">masthead · 40px</span>
+      <span style="font-size: 40px">example.ca</span>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 24px">
+      <span class="mono" style="font-size: 11px; color: #78716c; width: 190px; flex-shrink: 0">prose · 21px serif</span>
+      <span style="font-size: 21px; color: #44403c">of 827 messages carried a valid mark</span>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 24px">
+      <span class="mono" style="font-size: 11px; color: #78716c; width: 190px; flex-shrink: 0">data · 14px mono</span>
+      <span class="mono" style="font-size: 14px">198.51.100.77   38   0%   0%</span>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 24px">
+      <span class="mono" style="font-size: 11px; color: #78716c; width: 190px; flex-shrink: 0">section · 11px caps</span>
+      <span class="caps" style="font-size: 11px; color: #78716c">What needs doing</span>
+    </div>
+  </div>
+
+  <div style="margin-top: 30px; padding: 15px 18px; background: #f2ede2; border-left: 3px solid #78716c;
+              font-size: 13px; line-height: 1.65; color: #57534e; text-wrap: pretty">
+    No web fonts. <span class="mono" style="font-size: 12px">'Iowan Old Style', 'Palatino Linotype', Palatino,
+    'Book Antiqua', Georgia, serif</span> and the platform monospace stack, so the generated file stays
+    self-contained and renders the same offline. In print, reading copy sits at the 12pt floor (16px at 96dpi); labels and footers go to 10.5pt.
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      marks: [
+        { name: 'PASS',      hex: '#2f6b4f', colour: '#2f6b4f', rule: 'DMARC pass rate is 100%. Known good sender, no action.' },
+        { name: 'DKIM-ONLY', hex: '#2a6478', colour: '#2a6478', rule: 'DKIM aligned 100%, SPF aligned 0%. Normal for forwarded mail.' },
+        { name: 'SPF-ONLY',  hex: '#8a5d12', colour: '#8a5d12', rule: 'SPF aligned 100%, DKIM aligned 0%. The sender does not sign.' },
+        { name: 'PARTIAL',   hex: '#a8541f', colour: '#a8541f', rule: 'Pass rate above 0% and below 100%. Configuration incomplete.' },
+        { name: 'FAIL',      hex: '#9b2c2c', colour: '#9b2c2c', rule: 'Pass rate is 0%. Unauthorized, or yours with no SPF or DKIM.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

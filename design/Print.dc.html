@@ -1,0 +1,153 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #ffffff;
+      color: #1c1917;
+      font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #1c1917; text-decoration: none; border-bottom: 1px solid #1c1917; }
+    a:hover { color: #57534e; border-bottom-color: #57534e; }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .caps { text-transform: uppercase; letter-spacing: 0.14em; }
+  </style>
+</helmet>
+
+<!-- A4 at 96 px/inch (794 x 1123). Print drops the ground tint, the filter
+     controls and the reverse-name column. Reading copy — the prose, the
+     advice and the action rows — sits at the 12pt floor (16px at 96dpi);
+     subordinate labels and the footer go to 10.5pt (14px), no lower. -->
+<div style="padding: 72px 64px 56px 64px; min-height: 1123px; display: flex; flex-direction: column">
+
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 28px">
+    <div>
+      <div class="caps" style="font-size: 11px; color: #57534e; margin-bottom: 12px">DMARC aggregate report</div>
+      <div style="font-size: 34px; line-height: 1.1; letter-spacing: -0.01em">example.ca</div>
+      <div style="font-size: 16px; color: #44403c; margin-top: 8px">12 – 18 September 2026</div>
+    </div>
+    <svg width="54" height="35" viewBox="0 0 62 40" fill="none" aria-hidden="true" style="flex-shrink: 0">
+      <rect x="1" y="1" width="60" height="38" rx="3" stroke="#78716c" stroke-width="1.5"
+            stroke-dasharray="4 3"></rect>
+      <path d="M9 14c3-3 6 3 9 0s6 3 9 0" stroke="#78716c" stroke-width="1.5" stroke-linecap="round"></path>
+      <path d="M9 20c3-3 6 3 9 0s6 3 9 0" stroke="#78716c" stroke-width="1.5" stroke-linecap="round"></path>
+      <path d="M9 26c3-3 6 3 9 0s6 3 9 0" stroke="#78716c" stroke-width="1.5" stroke-linecap="round"></path>
+      <path d="M38 13v14M38 13h8a3.5 3.5 0 0 1 0 7h-8" stroke="#1c1917" stroke-width="1.7"
+            stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+  </div>
+
+  <div style="height: 1.5px; background: #1c1917; margin: 22px 0 0 0"></div>
+  <div style="height: 1px; background: #78716c; margin: 3px 0 34px 0"></div>
+
+  <div style="display: flex; align-items: baseline; gap: 22px">
+    <div style="font-size: 66px; line-height: 0.92; letter-spacing: -0.03em; color: #a8541f">91.1%</div>
+    <div style="font-size: 18px; line-height: 1.5; color: #1c1917; text-wrap: pretty">
+      of <span class="mono" style="font-size: 16px">827</span> messages carried a valid mark across
+      <span class="mono" style="font-size: 16px">8</span> sending addresses. Four need attention.
+    </div>
+  </div>
+
+  <!-- Print keeps the proportion as a hairline-bounded bar, not a flood fill. -->
+  <div style="margin-top: 24px; display: flex; height: 10px; border: 1px solid #1c1917">
+    <div style="width: 91.1%; background: #a8541f"></div>
+    <div style="flex-grow: 1; background: #ffffff"></div>
+  </div>
+  <div style="display: flex; justify-content: space-between; margin-top: 7px; font-size: 14px; color: #57534e">
+    <span class="mono">753 passed</span>
+    <span class="mono">74 did not</span>
+  </div>
+
+  <div style="margin-top: 22px; padding: 14px 18px; border: 1px solid #78716c;
+              font-size: 16px; line-height: 1.6; color: #1c1917; text-wrap: pretty">
+    Published policy <span class="mono" style="font-size: 15px">p=none</span> for the full range.
+    Below 100 per cent, and some of what is failing is yours — at p=quarantine it would land in spam, at p=reject it would be discarded.
+  </div>
+
+  <div class="caps" style="font-size: 11px; color: #57534e; margin: 34px 0 0 0">What needs doing</div>
+  <div style="height: 1px; background: #1c1917; margin: 9px 0 18px 0"></div>
+
+  <div style="display: flex; flex-direction: column; gap: 16px">
+    <div>
+      <div style="display: flex; align-items: baseline; gap: 14px">
+        <span class="caps mono" style="font-size: 12px; color: #9b2c2c; border-bottom: 2px solid #9b2c2c;
+              padding-bottom: 2px">FAIL</span>
+        <span class="mono" style="font-size: 14px; color: #57534e">2 sources · 49 msgs</span>
+      </div>
+      <div style="font-size: 16px; line-height: 1.55; color: #1c1917; font-style: italic; margin: 10px 0 8px 0;
+                  text-wrap: pretty">
+        Unauthorized, or a sender of yours with no SPF or DKIM record. Identify the SPF domain first.
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; gap: 20px; align-items: baseline">
+          <span class="mono" style="font-size: 16px; width: 152px; flex-shrink: 0">198.51.100.77</span>
+          <span class="mono" style="font-size: 16px; color: #57534e; width: 92px; flex-shrink: 0">38 msgs</span>
+          <span class="mono" style="font-size: 16px; color: #1c1917">bulk.example-sender.net</span>
+        </div>
+        <div style="display: flex; gap: 20px; align-items: baseline">
+          <span class="mono" style="font-size: 16px; width: 152px; flex-shrink: 0">203.0.113.203</span>
+          <span class="mono" style="font-size: 16px; color: #57534e; width: 92px; flex-shrink: 0">11 msgs</span>
+          <span class="mono" style="font-size: 16px; color: #1c1917">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="display: flex; align-items: baseline; gap: 14px">
+        <span class="caps mono" style="font-size: 12px; color: #a8541f; border-bottom: 2px solid #a8541f;
+              padding-bottom: 2px">PARTIAL</span>
+        <span class="mono" style="font-size: 14px; color: #57534e">1 source · 96 msgs</span>
+      </div>
+      <div style="font-size: 16px; line-height: 1.55; color: #1c1917; font-style: italic; margin: 10px 0 8px 0;
+                  text-wrap: pretty">
+        The configuration is not complete. Investigate before tightening policy.
+      </div>
+      <div style="display: flex; gap: 20px; align-items: baseline">
+        <span class="mono" style="font-size: 16px; width: 152px; flex-shrink: 0">198.51.100.4</span>
+        <span class="mono" style="font-size: 16px; color: #57534e; width: 92px; flex-shrink: 0">96 msgs</span>
+        <span class="mono" style="font-size: 16px; color: #1c1917">mx.example.ca</span>
+      </div>
+    </div>
+
+    <div>
+      <div style="display: flex; align-items: baseline; gap: 14px">
+        <span class="caps mono" style="font-size: 12px; color: #8a5d12; border-bottom: 2px solid #8a5d12;
+              padding-bottom: 2px">SPF-ONLY</span>
+        <span class="mono" style="font-size: 14px; color: #57534e">1 source · 54 msgs</span>
+      </div>
+      <div style="font-size: 16px; line-height: 1.55; color: #1c1917; font-style: italic; margin: 10px 0 8px 0;
+                  text-wrap: pretty">
+        The sender does not sign. Add DKIM if this sender is yours.
+      </div>
+      <div style="display: flex; gap: 20px; align-items: baseline">
+        <span class="mono" style="font-size: 16px; width: 152px; flex-shrink: 0">203.0.113.99</span>
+        <span class="mono" style="font-size: 16px; color: #57534e; width: 92px; flex-shrink: 0">54 msgs</span>
+        <span class="mono" style="font-size: 16px; color: #1c1917">bounce.example.ca</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1"></div>
+
+  <div style="height: 1px; background: #78716c; margin: 30px 0 10px 0"></div>
+  <div style="display: flex; justify-content: space-between; font-size: 14px; color: #57534e">
+    <span>example.ca · 12 – 18 September 2026</span>
+    <span class="mono">franking 1.0.0 · page 1 of 3</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
