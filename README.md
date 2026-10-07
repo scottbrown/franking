@@ -10,6 +10,12 @@ domain.
 It runs on demand, keeps no state between runs, makes no network call unless
 you ask for one, and never modifies the files it reads.
 
+## Install
+
+```sh
+go install github.com/scottbrown/franking/cmd/franking@latest
+```
+
 ## Build
 
 ```sh

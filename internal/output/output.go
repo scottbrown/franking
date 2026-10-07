@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"franking/internal/aggregate"
-	"franking/internal/diagnose"
+	"github.com/scottbrown/franking/internal/aggregate"
+	"github.com/scottbrown/franking/internal/diagnose"
 )
 
 // Format is an output format.

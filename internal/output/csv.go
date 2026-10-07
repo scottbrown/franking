@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"franking/internal/aggregate"
-	"franking/internal/safe"
+	"github.com/scottbrown/franking/internal/aggregate"
+	"github.com/scottbrown/franking/internal/safe"
 )
 
 // WriteCSV prints the source table with a header row. Every cell passes

@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"franking/internal/aggregate"
-	"franking/internal/output"
+	"github.com/scottbrown/franking/internal/aggregate"
+	"github.com/scottbrown/franking/internal/output"
 )
 
 func TestRunReadsAMixedDirectory(t *testing.T) {

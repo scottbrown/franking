@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"franking/internal/report"
+	"github.com/scottbrown/franking/internal/report"
 )
 
 func TestClassify(t *testing.T) {

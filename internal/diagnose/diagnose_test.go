@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"franking/internal/aggregate"
-	"franking/internal/report"
+	"github.com/scottbrown/franking/internal/aggregate"
+	"github.com/scottbrown/franking/internal/report"
 )
 
 // source describes one sending address for a scenario.

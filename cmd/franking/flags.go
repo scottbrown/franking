@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"franking/internal/archive"
-	"franking/internal/output"
-	"franking/internal/run"
+	"github.com/scottbrown/franking/internal/archive"
+	"github.com/scottbrown/franking/internal/output"
+	"github.com/scottbrown/franking/internal/run"
 )
 
 // errUsage means the usage text has already been printed.

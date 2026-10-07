@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"franking/internal/aggregate"
-	"franking/internal/diagnose"
-	"franking/internal/report"
+	"github.com/scottbrown/franking/internal/aggregate"
+	"github.com/scottbrown/franking/internal/diagnose"
+	"github.com/scottbrown/franking/internal/report"
 )
 
 func renderHTML(t *testing.T, res *aggregate.Result, opt Options) string {

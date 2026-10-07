@@ -6,8 +6,8 @@ import (
 	"sort"
 	"time"
 
-	"franking/internal/report"
-	"franking/internal/safe"
+	"github.com/scottbrown/franking/internal/report"
+	"github.com/scottbrown/franking/internal/safe"
 )
 
 // MaxSources is the number of distinct source addresses held in memory.

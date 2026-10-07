@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"franking/internal/safe"
+	"github.com/scottbrown/franking/internal/safe"
 )
 
 // Walk limits.

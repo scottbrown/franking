@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"franking/internal/aggregate"
-	"franking/internal/safe"
+	"github.com/scottbrown/franking/internal/aggregate"
+	"github.com/scottbrown/franking/internal/safe"
 )
 
 // The reverse DNS budget. These are the only network calls the tool makes,

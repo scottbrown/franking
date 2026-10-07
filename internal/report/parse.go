@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"franking/internal/safe"
+	"github.com/scottbrown/franking/internal/safe"
 )
 
 // Limits bound the work that one document may cause.

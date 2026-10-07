@@ -6,8 +6,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"franking/internal/aggregate"
-	"franking/internal/diagnose"
+	"github.com/scottbrown/franking/internal/aggregate"
+	"github.com/scottbrown/franking/internal/diagnose"
 )
 
 // WriteText prints the run summary, the per-file table, the source table,

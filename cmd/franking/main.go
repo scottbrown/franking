@@ -10,9 +10,9 @@ import (
 	"io"
 	"os"
 
-	"franking/internal/aggregate"
-	"franking/internal/output"
-	"franking/internal/run"
+	"github.com/scottbrown/franking/internal/aggregate"
+	"github.com/scottbrown/franking/internal/output"
+	"github.com/scottbrown/franking/internal/run"
 )
 
 // Exit codes.

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"franking/internal/aggregate"
-	"franking/internal/report"
+	"github.com/scottbrown/franking/internal/aggregate"
+	"github.com/scottbrown/franking/internal/report"
 )
 
 func TestParseFormat(t *testing.T) {

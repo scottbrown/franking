@@ -11,11 +11,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"franking/internal/aggregate"
-	"franking/internal/archive"
-	"franking/internal/output"
-	"franking/internal/report"
-	"franking/internal/safe"
+	"github.com/scottbrown/franking/internal/aggregate"
+	"github.com/scottbrown/franking/internal/archive"
+	"github.com/scottbrown/franking/internal/output"
+	"github.com/scottbrown/franking/internal/report"
+	"github.com/scottbrown/franking/internal/safe"
 )
 
 // DefaultTimeout bounds the whole run.

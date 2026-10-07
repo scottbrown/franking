@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"io"
 
-	"franking/internal/aggregate"
-	"franking/internal/diagnose"
+	"github.com/scottbrown/franking/internal/aggregate"
+	"github.com/scottbrown/franking/internal/diagnose"
 )
 
 type jsonDocument struct {

@@ -14,7 +14,7 @@ import (
 	"sort"
 	"strings"
 
-	"franking/internal/aggregate"
+	"github.com/scottbrown/franking/internal/aggregate"
 )
 
 // Kind is what one source appears to be.
