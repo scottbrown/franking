@@ -225,3 +225,71 @@ func record(ip string, count int64, dkim, spf report.AuthResult, dkimDomain, spf
 	}
 	return rec
 }
+
+// TestResultPolicyIsTheLatest covers a policy that changed inside the
+// range: the one in force now is the one the newest report carries, whatever
+// order the files were read in.
+func TestResultPolicyIsTheLatest(t *testing.T) {
+	withPolicy := func(p string, begin, end int64) *report.Report {
+		rep := reportWith("google.com", "example.ca", begin, end)
+		rep.Policy.P = p
+		return rep
+	}
+
+	tests := []struct {
+		name    string
+		reports []*report.Report
+		want    string
+		all     []string
+	}{
+		{
+			name:    "one policy",
+			reports: []*report.Report{withPolicy("none", 100, 200)},
+			want:    "none", all: []string{"none"},
+		},
+		{
+			name: "tightened, read newest first",
+			reports: []*report.Report{
+				withPolicy("quarantine", 300, 400),
+				withPolicy("none", 100, 200),
+			},
+			want: "quarantine", all: []string{"none", "quarantine"},
+		},
+		{
+			name: "loosened, read oldest first",
+			reports: []*report.Report{
+				withPolicy("reject", 100, 200),
+				withPolicy("none", 300, 400),
+			},
+			want: "none", all: []string{"none", "reject"},
+		},
+		{
+			name: "two receivers disagree over the same day",
+			reports: []*report.Report{
+				withPolicy("reject", 100, 200),
+				withPolicy("quarantine", 100, 200),
+			},
+			want: "reject", all: []string{"quarantine", "reject"},
+		},
+		{
+			name:    "no policy in the reports",
+			reports: []*report.Report{withPolicy("", 100, 200)},
+			want:    "",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			agg := New()
+			for _, rep := range tc.reports {
+				agg.AddReport("r.xml", rep)
+			}
+			res := agg.Result(1)
+			if res.Policy != tc.want {
+				t.Errorf("Policy = %q, want %q", res.Policy, tc.want)
+			}
+			if strings.Join(res.Policies, ",") != strings.Join(tc.all, ",") {
+				t.Errorf("Policies = %v, want %v", res.Policies, tc.all)
+			}
+		})
+	}
+}

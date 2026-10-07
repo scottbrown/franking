@@ -136,9 +136,9 @@ func writeTodo(b *strings.Builder, d *diagnose.Diagnosis) {
 }
 
 func writePolicyLine(b *strings.Builder, res *aggregate.Result, d *diagnose.Diagnosis) {
-	policy := "unknown"
-	if len(res.Policies) > 0 {
-		policy = strings.Join(res.Policies, ", ")
+	policy := currentPolicy(res)
+	if earlier := earlierPolicies(res); earlier != "" {
+		policy += fmt.Sprintf(" (%s earlier in the range)", earlier)
 	}
 	if res.Totals.Messages <= 0 {
 		fmt.Fprintf(b, "\nPolicy: p=%s — no messages were reported, so the policy state is unknown.\n",

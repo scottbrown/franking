@@ -102,3 +102,23 @@ func rfc3339(t time.Time) string {
 }
 
 func percent(v float64) string { return fmt.Sprintf("%.1f%%", v*100) }
+
+// currentPolicy is the p= value in force at the end of the range.
+func currentPolicy(res *aggregate.Result) string {
+	if res.Policy == "" {
+		return "unknown"
+	}
+	return res.Policy
+}
+
+// earlierPolicies lists the p= values seen in the range other than the
+// current one, as "p=none, p=quarantine", or "" when the policy never moved.
+func earlierPolicies(res *aggregate.Result) string {
+	var out []string
+	for _, p := range res.Policies {
+		if p != res.Policy {
+			out = append(out, "p="+p)
+		}
+	}
+	return strings.Join(out, ", ")
+}

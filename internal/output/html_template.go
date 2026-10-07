@@ -56,7 +56,7 @@ const htmlTemplate = `<!DOCTYPE html>
   </div>
 
   <p class="callout">
-    Published policy <span class="mono">p={{.PolicyP}}</span> for the full range.
+    Published policy <span class="mono">p={{.PolicyP}}</span> {{.PolicyScope}}.
     {{.PolicyAdvice}}
   </p>
 

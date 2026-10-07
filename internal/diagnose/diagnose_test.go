@@ -23,9 +23,35 @@ type source struct {
 // actually produces.
 func build(t *testing.T, policy, domain string, days int, sources ...source) *aggregate.Result {
 	t.Helper()
-	begin := time.Unix(1789171200, 0)
-	end := begin.Add(time.Duration(days) * 24 * time.Hour)
+	return buildReports(t, domain, period{policy: policy, days: days, sources: sources})
+}
 
+// period is one report: the policy it carried, when it ran, counted in days
+// from a fixed start, and what it saw.
+type period struct {
+	policy     string
+	from, days int
+	sources    []source
+}
+
+func buildReports(t *testing.T, domain string, periods ...period) *aggregate.Result {
+	t.Helper()
+	start := time.Unix(1789171200, 0)
+	agg := aggregate.New()
+	for _, p := range periods {
+		begin := start.Add(time.Duration(p.from) * 24 * time.Hour)
+		end := begin.Add(time.Duration(p.days) * 24 * time.Hour)
+		agg.AddFile(agg.AddReport("r.xml", &report.Report{
+			Metadata: report.Metadata{Org: "google.com",
+				Range: report.DateRange{Begin: begin, End: end}},
+			Policy:  report.Policy{Domain: domain, P: p.policy},
+			Records: records(domain, p.sources),
+		}))
+	}
+	return agg.Result(1)
+}
+
+func records(domain string, sources []source) []report.Record {
 	var records []report.Record
 	for _, s := range sources {
 		rec := report.Record{
@@ -38,14 +64,7 @@ func build(t *testing.T, policy, domain string, days int, sources ...source) *ag
 		}
 		records = append(records, rec)
 	}
-	agg := aggregate.New()
-	agg.AddFile(agg.AddReport("r.xml", &report.Report{
-		Metadata: report.Metadata{Org: "google.com",
-			Range: report.DateRange{Begin: begin, End: end}},
-		Policy:  report.Policy{Domain: domain, P: policy},
-		Records: records,
-	}))
-	return agg.Result(1)
+	return records
 }
 
 // forgedFleet is what a spoofing campaign looks like: many addresses, no
@@ -57,6 +76,22 @@ func forgedFleet(n int, domain string) []source {
 		out = append(out, source{
 			ip:   "203.0.113." + itoa(i+1),
 			msgs: int64(1 + i%2),
+			dkim: report.AuthFail, spf: report.AuthFail,
+			spfDomain: domain,
+		})
+	}
+	return out
+}
+
+// steadyFleet is the same campaign seen over weeks rather than days: each
+// address keeps coming back, so its total climbs past a handful while its
+// daily rate stays tiny.
+func steadyFleet(n int, domain string, minMsgs, spread int64) []source {
+	out := make([]source, 0, n)
+	for i := range n {
+		out = append(out, source{
+			ip:   "198.18." + itoa(i/250) + "." + itoa(i%250+1),
+			msgs: minMsgs + int64(i)%spread,
 			dkim: report.AuthFail, spf: report.AuthFail,
 			spfDomain: domain,
 		})
@@ -171,6 +206,26 @@ func TestDiagnoseScenarios(t *testing.T) {
 			wantSafe:    true, wantNext: "quarantine",
 		},
 		{
+			// A real run: 24 days, 300 addresses at 3 to 12 messages each.
+			// Each one cleared the old fixed limit of 2 and the fleet went
+			// unrecognised.
+			name: "steady forgery over a long window", policy: "quarantine", days: 24,
+			sources:     append([]source{healthy}, steadyFleet(300, dom, 3, 10)...),
+			wantFinding: FindingForgery,
+			wantKinds:   map[Kind]int{KindPassing: 1, KindForged: 300},
+			wantSafe:    true, wantNext: "reject",
+			headlineHas: "forging your domain",
+		},
+		{
+			// Ten servers at two a day each is a farm of your own that SPF
+			// forgot, not a fleet of forgers.
+			name: "a few busy unsigned servers are not called forgery", policy: "none", days: 30,
+			sources:     append([]source{healthy}, steadyFleet(10, dom, 60, 1)...),
+			wantFinding: FindingUnknowns,
+			wantKinds:   map[Kind]int{KindPassing: 1, KindUnidentified: 10},
+			wantSafe:    false,
+		},
+		{
 			name: "already at reject", policy: "reject", days: 30,
 			sources:     append([]source{healthy}, forgedFleet(20, dom)...),
 			wantFinding: FindingForgery,
@@ -236,6 +291,83 @@ func TestForgeryDoesNotMoveTheOwnRate(t *testing.T) {
 	joined := strings.Join(titles, " | ")
 	if !strings.Contains(joined, "Move the policy from p=none to p=quarantine") {
 		t.Fatalf("actions = %s, want the policy move first", joined)
+	}
+}
+
+func TestTinyLimitScalesWithTheWindow(t *testing.T) {
+	tests := []struct {
+		days int
+		want int64
+	}{
+		{0, dispersedTinyMsgs},
+		{1, dispersedTinyMsgs},
+		{7, 4},
+		{24, 12},
+		{31, 16},
+	}
+	for _, tc := range tests {
+		if got := tinyLimit(tc.days); got != tc.want {
+			t.Errorf("tinyLimit(%d) = %d, want %d", tc.days, got, tc.want)
+		}
+	}
+}
+
+func TestDispersionEvidenceNamesTheWindow(t *testing.T) {
+	const dom = "example.ca"
+	healthy := source{ip: "192.0.2.1", msgs: 100, dkim: report.AuthPass, spf: report.AuthPass,
+		dkimDomains: []string{dom}, spfDomain: dom}
+	d := Run(build(t, "none", dom, 24, append([]source{healthy}, steadyFleet(50, dom, 3, 10)...)...))
+
+	joined := strings.Join(d.Evidence, " | ")
+	if !strings.Contains(joined, "50 of 50 sent 12 messages or fewer over 24 days") {
+		t.Fatalf("evidence = %s", joined)
+	}
+}
+
+// TestPolicyChangedInTheRange is a domain tightened part-way through the
+// reports: the advice must start from the policy in force now, not from a
+// list of every policy the range ever saw.
+func TestPolicyChangedInTheRange(t *testing.T) {
+	const dom = "example.ca"
+	healthy := source{ip: "192.0.2.1", msgs: 100, dkim: report.AuthPass, spf: report.AuthPass,
+		dkimDomains: []string{dom}, spfDomain: dom}
+	unknown := source{ip: "198.51.100.9", msgs: 240, dkim: report.AuthFail, spf: report.AuthFail,
+		spfDomain: dom}
+
+	tests := []struct {
+		name      string
+		sources   []source
+		wantTitle string
+	}{
+		{
+			name:      "safe to tighten again",
+			sources:   append([]source{healthy}, forgedFleet(40, dom)...),
+			wantTitle: "Move the policy from p=quarantine to p=reject",
+		},
+		{
+			name:      "hold where it is now",
+			sources:   []source{healthy, unknown},
+			wantTitle: "Leave the policy at p=quarantine for now",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			res := buildReports(t, dom,
+				period{policy: "none", from: 0, days: 10},
+				period{policy: "quarantine", from: 10, days: 14, sources: tc.sources})
+			d := Run(res)
+
+			if d.Readiness.Current != "quarantine" {
+				t.Fatalf("current policy = %q, want quarantine", d.Readiness.Current)
+			}
+			var titles []string
+			for _, a := range d.Actions {
+				titles = append(titles, a.Title)
+			}
+			if joined := strings.Join(titles, " | "); !strings.Contains(joined, tc.wantTitle) {
+				t.Fatalf("actions = %s, want %q", joined, tc.wantTitle)
+			}
+		})
 	}
 }
 

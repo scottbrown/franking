@@ -48,6 +48,7 @@ type htmlDoc struct {
 	FailMessages  int64
 	SourceCount   int
 	PolicyP       string
+	PolicyScope   string
 	PolicyAdvice  string
 	Stats         []htmlStat
 	Headline      string
@@ -196,7 +197,8 @@ func buildHTMLDoc(res *aggregate.Result, opt Options) htmlDoc {
 		Totals:       res.Totals,
 		FailMessages: res.Totals.Messages - res.Totals.DMARCPass,
 		SourceCount:  sourcePopulation(res),
-		PolicyP:      policyText(res),
+		PolicyP:      currentPolicy(res),
+		PolicyScope:  policyScope(res),
 		Resolve:      opt.Resolve,
 		Command:      commandLine(opt),
 		Version:      Version,
@@ -464,11 +466,13 @@ func policyDomainOf(res *aggregate.Result) string {
 	return "unknown domain"
 }
 
-func policyText(res *aggregate.Result) string {
-	if len(res.Policies) == 0 {
-		return "unknown"
+// policyScope says how long the published policy held: the whole range, or
+// only its end when it changed part-way through.
+func policyScope(res *aggregate.Result) string {
+	if earlier := earlierPolicies(res); earlier != "" {
+		return "at the end of the range, after " + earlier + " earlier"
 	}
-	return strings.Join(res.Policies, ", ")
+	return "for the full range"
 }
 
 func commandLine(opt Options) string {

@@ -455,3 +455,30 @@ func TestMinCountCannotChangeTheDiagnosis(t *testing.T) {
 			full.Readiness.Safe, filtered.Readiness.Safe)
 	}
 }
+
+func TestHTMLPolicyChangedInTheRange(t *testing.T) {
+	html := renderHTML(t, changedPolicyResult(), Options{})
+	if !strings.Contains(html, `p=quarantine</span> at the end of the range, after p=none earlier`) {
+		t.Errorf("want the current policy and the earlier one, got:\n%s", firstLines(html, 5))
+	}
+	if !strings.Contains(html, "Publish p=reject") {
+		t.Error("want the next step from the current policy")
+	}
+	if strings.Contains(html, "for the full range") {
+		t.Error("a policy that changed did not hold for the full range")
+	}
+}
+
+func TestHTMLPolicyHeldForTheFullRange(t *testing.T) {
+	agg := aggregate.New()
+	agg.AddFile(agg.AddReport("clean.xml", &report.Report{
+		Metadata: report.Metadata{Org: "google.com", Range: report.DateRange{
+			Begin: time.Unix(1700000000, 0), End: time.Unix(1700086400, 0)}},
+		Policy:  report.Policy{Domain: "example.ca", P: "none"},
+		Records: []report.Record{mkRecord("192.0.2.1", 17, report.AuthPass, report.AuthPass)},
+	}))
+	html := renderHTML(t, agg.Result(1), Options{})
+	if !strings.Contains(html, `p=none</span> for the full range`) {
+		t.Errorf("want the single policy for the full range, got:\n%s", firstLines(html, 5))
+	}
+}

@@ -11,6 +11,7 @@ package diagnose
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -47,9 +48,12 @@ const (
 // place where they can be argued with.
 const (
 	// A forgery fleet is many sources each sending almost nothing. A broken
-	// sender of yours is one or two sources each sending a lot.
+	// sender of yours is one or two sources each sending a lot. "Almost
+	// nothing" is a rate, not a total: a forger that returns every other day
+	// for a month reaches 15 messages without ever sending much.
 	dispersedMinSources = 8
 	dispersedTinyMsgs   = 2
+	dispersedTinyPerDay = 0.5
 	dispersedTinyShare  = 0.6
 
 	// Below this much evidence, say so rather than sounding certain.
@@ -230,9 +234,10 @@ func Run(res *aggregate.Result) *Diagnosis {
 
 	// Second pass: many sources each sending almost nothing is a fleet, not
 	// a misconfiguration. One or two sending a lot is the opposite.
+	limit := tinyLimit(d.Days)
 	tiny := 0
 	for _, s := range unattributed {
-		if s.Messages <= dispersedTinyMsgs {
+		if s.Messages <= limit {
 			tiny++
 		}
 	}
@@ -271,10 +276,17 @@ func Run(res *aggregate.Result) *Diagnosis {
 
 	d.Findings = findings(d)
 	d.Headline = headline(d)
-	d.Evidence = evidence(d, tiny, dispersed)
+	d.Evidence = evidence(d, tiny, limit, dispersed)
 	d.Readiness = readiness(d, res)
 	d.Actions = actions(d, res)
 	return d
+}
+
+// tinyLimit is the most one address can send over the range and still count
+// as sending almost nothing.
+func tinyLimit(days int) int64 {
+	scaled := int64(math.Ceil(float64(days) * dispersedTinyPerDay))
+	return max(scaled, dispersedTinyMsgs)
 }
 
 // classify reads one source. The unattributed case is resolved by Run,
@@ -369,7 +381,7 @@ func headline(d *Diagnosis) string {
 	return "Everything authenticates."
 }
 
-func evidence(d *Diagnosis, tiny int, dispersed bool) []string {
+func evidence(d *Diagnosis, tiny int, limit int64, dispersed bool) []string {
 	var out []string
 	if forged := d.Groups[KindForged]; forged.Count() > 0 {
 		out = append(out, fmt.Sprintf(
@@ -377,9 +389,12 @@ func evidence(d *Diagnosis, tiny int, dispersed bool) []string {
 				"the shape of a forgery, not a misconfiguration",
 			plural(forged.Count(), "source")))
 		if dispersed {
-			out = append(out, fmt.Sprintf(
-				"the volume is spread thin: %d of %d sent %d messages or fewer",
-				tiny, forged.Count(), dispersedTinyMsgs))
+			line := fmt.Sprintf("the volume is spread thin: %d of %d sent %d messages or fewer",
+				tiny, forged.Count(), limit)
+			if d.Days > 0 {
+				line += " over " + plural(d.Days, "day")
+			}
+			out = append(out, line)
 		}
 		out = append(out, fmt.Sprintf(
 			"the headline pass rate of %s is set by that forged mail; over your own senders it is %s",
@@ -542,10 +557,10 @@ func nextPolicy(current string) string {
 }
 
 func policyOf(res *aggregate.Result) string {
-	if len(res.Policies) == 0 {
+	if res.Policy == "" {
 		return "unknown"
 	}
-	return strings.Join(res.Policies, ", ")
+	return res.Policy
 }
 
 func daysCovered(res *aggregate.Result) int {

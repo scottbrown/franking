@@ -4,6 +4,7 @@ package aggregate
 
 import (
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/scottbrown/franking/internal/report"
@@ -109,10 +110,13 @@ type Result struct {
 	// AllSources is every address, including those -min-count hides from
 	// the table. A display filter must not change what the run concluded,
 	// so anything that reasons about the population reads this.
-	AllSources   []*Source
-	Totals       Totals
-	Begin        time.Time
-	End          time.Time
+	AllSources []*Source
+	Totals     Totals
+	Begin      time.Time
+	End        time.Time
+	// Policy is the p= value of the newest report: the policy in force at
+	// the end of the range. Policies is every value seen across the range.
+	Policy       string
 	Policies     []string
 	Domains      []string
 	FilesFound   int
@@ -129,6 +133,8 @@ type Aggregator struct {
 	sources    map[string]*Source
 	files      []FileResult
 	policies   set
+	policy     string
+	policyEnd  time.Time
 	domains    set
 	warnings   []string
 	begin      time.Time
@@ -178,6 +184,7 @@ func (a *Aggregator) AddReport(name string, rep *report.Report) FileResult {
 	}
 	if rep.Policy.P != "" {
 		a.policies.add(rep.Policy.P)
+		a.notePolicy(rep.Policy.P, rep.Metadata.Range.End)
 	}
 	if rep.Policy.Domain != "" {
 		a.domains.add(rep.Policy.Domain)
@@ -234,6 +241,32 @@ func (a *Aggregator) addRecord(rep *report.Report, rec report.Record) {
 	src.LastSeen = latest(src.LastSeen, rep.Metadata.Range.End)
 }
 
+// notePolicy keeps the policy of the newest report. Two receivers reporting
+// the same period can disagree when one has a stale DNS cache; the stronger
+// policy wins the tie, so the answer does not depend on file order.
+func (a *Aggregator) notePolicy(p string, end time.Time) {
+	switch {
+	case a.policy == "", end.After(a.policyEnd):
+	case end.Equal(a.policyEnd) && policyStrength(p) > policyStrength(a.policy):
+	default:
+		return
+	}
+	a.policy = p
+	a.policyEnd = end
+}
+
+func policyStrength(p string) int {
+	switch strings.ToLower(strings.TrimSpace(p)) {
+	case "none":
+		return 1
+	case "quarantine":
+		return 2
+	case "reject":
+		return 3
+	}
+	return 0
+}
+
 func (a *Aggregator) extendRange(begin, end time.Time) {
 	a.begin = earliest(a.begin, begin)
 	a.end = latest(a.end, end)
@@ -246,6 +279,7 @@ func (a *Aggregator) Result(minCount int64) *Result {
 		Files:     a.files,
 		Begin:     a.begin,
 		End:       a.end,
+		Policy:    a.policy,
 		Policies:  a.policies.sorted(),
 		Domains:   a.domains.sorted(),
 		Warnings:  a.warnings,

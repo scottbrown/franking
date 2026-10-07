@@ -326,3 +326,59 @@ func hostileResult() *aggregate.Result {
 	res.Sources[0].Host = "host.example.ca"
 	return res
 }
+
+// changedPolicyResult is the shape of a domain tightened part-way through:
+// p=none for ten days, then p=quarantine for fourteen, with a healthy sender
+// throughout and a steady forgery fleet that keeps coming back.
+func changedPolicyResult() *aggregate.Result {
+	agg := aggregate.New()
+	start := time.Unix(1700000000, 0)
+	day := 24 * time.Hour
+	add := func(p string, from, days int, records []report.Record) {
+		begin := start.Add(time.Duration(from) * day)
+		agg.AddFile(agg.AddReport(p+".xml", &report.Report{
+			Metadata: report.Metadata{Org: "google.com", Range: report.DateRange{
+				Begin: begin, End: begin.Add(time.Duration(days) * day)}},
+			Policy:  report.Policy{Domain: "example.ca", P: p},
+			Records: records,
+		}))
+	}
+	healthy := report.Record{
+		SourceIP: "203.0.113.10", Count: 150,
+		Disposition: report.DispositionNone,
+		DKIM:        report.AuthPass, SPF: report.AuthPass,
+		DKIMDomains: []string{"example.ca"}, SPFDomains: []string{"example.ca"},
+	}
+	var fleet []report.Record
+	for i := range 60 {
+		fleet = append(fleet, report.Record{
+			SourceIP: fmt.Sprintf("198.51.100.%d", i+1), Count: int64(3 + i%4),
+			Disposition: report.DispositionNone,
+			DKIM:        report.AuthFail, SPF: report.AuthFail,
+			SPFDomains: []string{"example.ca"},
+		})
+	}
+	add("none", 0, 10, append([]report.Record{healthy}, fleet...))
+	add("quarantine", 10, 14, append([]report.Record{healthy}, fleet...))
+	return agg.Result(1)
+}
+
+func TestWriteTextPolicyChangedInTheRange(t *testing.T) {
+	var buf bytes.Buffer
+	if err := WriteText(&buf, changedPolicyResult(), Options{}); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	for _, want := range []string{
+		"Policy: p=quarantine (p=none earlier in the range)",
+		"move to p=reject",
+		"Move the policy from p=quarantine to p=reject",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("want %q, got:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "none, quarantine") {
+		t.Errorf("the policy must not read as a list:\n%s", out)
+	}
+}

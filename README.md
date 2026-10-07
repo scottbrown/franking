@@ -55,6 +55,17 @@ Run summary
   DMARC pass         181 (91.0%)
   source addresses   6
 
+Diagnosis
+  1 sender of yours is not aligned.
+
+  your sender  2 sources  103 messages  100.0% pass
+  forwarded    2 sources  71 messages   100.0% pass
+  unsigned     1 source   7 messages    100.0% pass
+  not aligned  1 source   18 messages   0.0% pass
+
+  198.51.100.77 — 18 messages, sends as bulk.example-sender.net, which is
+  not aligned with your domain
+
 Files
   FILE                                     ORG                ...  RECORDS  MESSAGES  STATUS  REASON
   google.com!example.ca!1700000000!...zip  google.com         ...  3        155       ok      -
@@ -70,17 +81,20 @@ Sources
   203.0.113.99   7         3.5%   0.0%    100.0%  mail.vendor.net            SPF-ONLY
   2001:db8::1    3         1.5%   100.0%  100.0%  example.ca                 PASS
 
-Actions
-  FAIL  1 source(s), 18 message(s) — Unauthorized, or a sender of yours with no SPF or DKIM record. Identify the SPF domain first.
-    198.51.100.77  18 message(s)  spf: bulk.example-sender.net
-  SPF-ONLY  1 source(s), 7 message(s) — Sender does not sign. Add DKIM if the sender is yours.
-    203.0.113.99  7 message(s)  spf: mail.vendor.net
-  DKIM-ONLY  2 source(s), 71 message(s) — DKIM aligned, SPF not. Normal for forwarded mail. No action.
-    203.0.113.10  50 message(s)  spf: mail.vendor.net
-    192.0.2.200   21 message(s)  spf: bounce.example-sender.net
-  PASS  2 source(s) need no action.
+What to do
+  1. Fix 198.51.100.77 (18 messages)
+     Sends as bulk.example-sender.net, which is not aligned with your
+     domain. Either add DKIM signing at that service, or have it send with
+     an envelope domain under yours so SPF aligns.
+  2. Add DKIM signing for 1 sender
+     These pass DMARC on SPF alone, so nothing breaks today, but they have
+     no margin left: one forwarding hop or one SPF change and their mail
+     fails.
+  3. Leave the policy at p=none for now
+     Mail that looks like yours is still failing, and tightening would start
+     acting on it. Clear the sources above first.
 
-Policy: p=none over 2023-11-14 15:13 to 2023-11-18 15:13 — DMARC pass rate 91.0%, below 100%; resolve the sources above before moving the policy forward.
+Policy: p=none over 2023-11-14 15:13 to 2023-11-18 15:13 — DMARC pass rate 91.0%; the policy should not move yet.
 ```
 
 Machine-readable output:
@@ -143,15 +157,17 @@ failing population* plus whether each failing source owns up to who it is:
 | DKIM signature attempted | usually — a stale key or selector | never; there is no key to sign with |
 | Envelope domain | its own (`bounce.sendgrid.net`) | forged as yours |
 | Number of sources | one or two | many |
-| Volume each | substantial | one or two messages |
+| Volume each | substantial | a trickle: two messages, or one every other day over a longer window |
 
 Each failing source is read first. One that attempted a DKIM signature, or
 that used its own bounce domain, has identified itself — that is a sender of
 yours with a gap, and it is reported as `not aligned`. One that claims your
 domain with no signature is *unattributed*, and then the population decides:
 many of them each sending almost nothing is a fleet and is reported as
-`forged`; a few sending real volume is reported as `unidentified`, because a
-server of yours that was never added to SPF looks exactly like that.
+`forged`. "Almost nothing" is a rate rather than a total, because a forger
+that keeps coming back for a month adds up even though it never sends much.
+A few sending real volume is reported as `unidentified`, because a server of
+yours that was never added to SPF looks exactly like that.
 
 The thresholds are judgement calls rather than anything standardised, so
 they sit together at the top of `internal/diagnose/diagnose.go` where they
@@ -173,7 +189,8 @@ Diagnosis
   147 sources carried no DKIM signature and used your own domain as the
   envelope — the shape of a forgery, not a misconfiguration
 
-  the volume is spread thin: 115 of 147 sent 2 messages or fewer
+  the volume is spread thin: 141 of 147 sent 4 messages or fewer over 7
+  days
 
   the headline pass rate of 26.3% is set by that forged mail; over your own
   senders it is 100.0%
@@ -191,6 +208,14 @@ The steps are ordered, and the policy step comes last on purpose: you clear
 your own senders before you tighten. Where the evidence is thin — a short
 window, or few messages of your own — it says so rather than sounding
 certain.
+
+If the published policy changed part-way through the reports, the advice
+starts from the policy in force at the end of the range — the one carried by
+the newest report — and the earlier ones are named alongside it:
+
+```
+Policy: p=quarantine (p=none earlier in the range) over ... — move to p=reject.
+```
 
 `-min-count` hides rows from the table. It never changes the diagnosis,
 which always reads every address the run saw.
