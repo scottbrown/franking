@@ -28,7 +28,7 @@ Or without Go Task:
 go build -o .build/franking ./cmd/franking
 ```
 
-The tool needs Go 1.22 or later and no dependencies at all — standard
+The tool needs Go 1.27.4 or later and no dependencies at all — standard
 library only.
 
 ## Usage
